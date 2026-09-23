@@ -1,0 +1,3583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CashFlow Copilot — Intelligent Treasury & Runway Engine</title>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React 18 & ReactDOM 18 UMD -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel Standalone for in-browser JSX compilation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-[#090e0c] text-slate-200">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect, useRef } = React;
+
+    // SVG Icon system
+    const IconBase = ({ children, className = "w-4 h-4", fill = "none", stroke = "currentColor", ...props }) => (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill={fill}
+        stroke={stroke}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        {...props}
+      >
+        {children}
+      </svg>
+    );
+
+    const Sparkles = (p) => <IconBase {...p}><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></IconBase>;
+    const AlertTriangle = (p) => <IconBase {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
+    const ShieldCheck = (p) => <IconBase {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></IconBase>;
+    const DollarSign = (p) => <IconBase {...p}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></IconBase>;
+    const Clock = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
+    const ArrowUpRight = (p) => <IconBase {...p}><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></IconBase>;
+    const ArrowDownRight = (p) => <IconBase {...p}><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></IconBase>;
+    const ChevronRight = (p) => <IconBase {...p}><polyline points="9 18 15 12 9 6"/></IconBase>;
+    const ChevronLeft = (p) => <IconBase {...p}><polyline points="15 18 9 12 15 6"/></IconBase>;
+    const ArrowRight = (p) => <IconBase {...p}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></IconBase>;
+    const ArrowLeft = (p) => <IconBase {...p}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></IconBase>;
+    const Check = (p) => <IconBase {...p}><polyline points="20 6 9 17 4 12"/></IconBase>;
+    const CheckCircle = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></IconBase>;
+    const Zap = (p) => <IconBase {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></IconBase>;
+    const Sliders = (p) => <IconBase {...p}><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></IconBase>;
+    const Handshake = (p) => <IconBase {...p}><path d="m11 17 2 2a1 1 0 0 0 1.4 0l4.3-4.3a1 1 0 0 0 0-1.4L15 10"/><path d="m18 13 3.3-3.3a1 1 0 0 0 0-1.4l-4.6-4.6a1 1 0 0 0-1.4 0L12 7"/><path d="m2 13 4.6 4.6a1 1 0 0 0 1.4 0L12 13"/><path d="m6 17-2.3 2.3a1 1 0 0 0 0 1.4L7 24"/></IconBase>;
+    const Send = (p) => <IconBase {...p}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></IconBase>;
+    const Activity = (p) => <IconBase {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></IconBase>;
+    const BarChart3 = (p) => <IconBase {...p}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></IconBase>;
+    const FileText = (p) => <IconBase {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></IconBase>;
+    const RefreshCw = (p) => <IconBase {...p}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></IconBase>;
+    const UploadCloud = (p) => <IconBase {...p}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></IconBase>;
+    const Download = (p) => <IconBase {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></IconBase>;
+    const Printer = (p) => <IconBase {...p}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></IconBase>;
+    const Sun = (p) => <IconBase {...p}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></IconBase>;
+    const Moon = (p) => <IconBase {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></IconBase>;
+    const X = (p) => <IconBase {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>;
+    const Plus = (p) => <IconBase {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></IconBase>;
+    const Trash2 = (p) => <IconBase {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></IconBase>;
+    const Undo2 = (p) => <IconBase {...p}><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></IconBase>;
+    const RotateCcw = (p) => <IconBase {...p}><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></IconBase>;
+    const Split = (p) => <IconBase {...p}><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.17-2.83L3 3"/><path d="m15 9 6-6"/></IconBase>;
+    const CalendarClock = (p) => <IconBase {...p}><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="17.5" cy="17.5" r="4.5"/><polyline points="17.5 15 17.5 17.5 19 19"/></IconBase>;
+    const Percent = (p) => <IconBase {...p}><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></IconBase>;
+    const TrendingDown = (p) => <IconBase {...p}><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></IconBase>;
+    const Copy = (p) => <IconBase {...p}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></IconBase>;
+    const Mail = (p) => <IconBase {...p}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></IconBase>;
+    const PhoneCall = (p) => <IconBase {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconBase>;
+    const ExternalLink = (p) => <IconBase {...p}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></IconBase>;
+    const MessageSquare = (p) => <IconBase {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></IconBase>;
+    const UserPlus = (p) => <IconBase {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></IconBase>;
+    const Building = (p) => <IconBase {...p}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></IconBase>;
+    const CreditCard = (p) => <IconBase {...p}><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></IconBase>;
+    const FileSpreadsheet = (p) => <IconBase {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></IconBase>;
+
+    const PRESETS = {
+      agencyCrunch: {
+        id: 'agencyCrunch',
+        name: 'Tech Agency (Payroll Crunch)',
+        initialCash: 24500,
+        invoices: [
+          { id: 'inv-1', client: 'Acme Global Corp', amount: 32000, dueDate: 8, confidence: 'medium', status: 'pending', delayDays: 0, contactName: 'Sarah Jenkins', email: 's.jenkins@acme.com' },
+          { id: 'inv-2', client: 'Starlight Retailers', amount: 14500, dueDate: 18, confidence: 'high', status: 'pending', delayDays: 0, contactName: 'Mark Vance', email: 'mvance@starlight.io' },
+          { id: 'inv-3', client: 'Zenith Logistics', amount: 9800, dueDate: 42, confidence: 'high', status: 'pending', delayDays: 0, contactName: 'Elena Rostova', email: 'elena@zenithlog.com' },
+          { id: 'inv-4', client: 'HyperFlow Media', amount: 21000, dueDate: 65, confidence: 'medium', status: 'pending', delayDays: 0, contactName: 'Dave Cho', email: 'dave@hyperflow.co' },
+        ],
+        expenses: [
+          { id: 'exp-1', title: 'Core Engineering & Design Payroll', amount: 28000, dueDayOfInterval: [5, 35, 65], category: 'Payroll', essential: true, delayedDays: 0 },
+          { id: 'exp-2', title: 'Quarterly GST & Business Tax Filing', amount: 12400, dueDayOfInterval: [20], category: 'Tax', essential: true, delayedDays: 0 },
+          { id: 'exp-3', title: 'Office Space & Coworking Leases', amount: 6500, dueDayOfInterval: [1, 31, 61], category: 'Rent', essential: true, delayedDays: 0 },
+          { id: 'exp-4', title: 'AWS Cloud Infrastructure Tier', amount: 4200, dueDayOfInterval: [12, 42, 72], category: 'Vendor', essential: true, delayedDays: 0 },
+          { id: 'exp-5', title: 'Q4 External Marketing Retainer', amount: 5000, dueDayOfInterval: [15, 45, 75], category: 'Discretionary', essential: false, delayedDays: 0 },
+          { id: 'exp-6', title: 'High-End Workstations Hardware CapEx', amount: 3800, dueDayOfInterval: [22], category: 'CapEx', essential: false, delayedDays: 0 }
+        ]
+      },
+      retailCrunch: {
+        id: 'retailCrunch',
+        name: 'B2B Wholesale (EMI & GST Pinch)',
+        initialCash: 17500,
+        invoices: [
+          { id: 'inv-r1', client: 'Omni SuperMart Network', amount: 26000, dueDate: 24, confidence: 'medium', status: 'pending', delayDays: 0, contactName: 'Raj Patel', email: 'raj@omnimart.in' },
+          { id: 'inv-r2', client: 'QuickGrocery Express', amount: 11500, dueDate: 14, confidence: 'low', status: 'pending', delayDays: 0, contactName: 'Anita Rao', email: 'anita@quickmart.in' },
+          { id: 'inv-r3', client: 'Metro Distribution Hub', amount: 19000, dueDate: 40, confidence: 'high', status: 'pending', delayDays: 0, contactName: 'Priya Sharma', email: 'psharma@metrohub.in' }
+        ],
+        expenses: [
+          { id: 'exp-r1', title: 'Inventory Bulk Supplier Consignment', amount: 22000, dueDayOfInterval: [10, 40], category: 'Vendor', essential: true, delayedDays: 0 },
+          { id: 'exp-r2', title: 'Warehouse Staff Monthly Wages', amount: 11000, dueDayOfInterval: [7, 37, 67], category: 'Payroll', essential: true, delayedDays: 0 },
+          { id: 'exp-r3', title: 'Central Fulfillment Godown Rent', amount: 5500, dueDayOfInterval: [3, 33, 63], category: 'Rent', essential: true, delayedDays: 0 },
+          { id: 'exp-r4', title: 'Commercial Equipment Term Loan EMI', amount: 4800, dueDayOfInterval: [16, 46, 76], category: 'EMI', essential: true, delayedDays: 0 },
+          { id: 'exp-r5', title: 'State Goods & Services Tax (GST)', amount: 9500, dueDayOfInterval: [20], category: 'Tax', essential: true, delayedDays: 0 }
+        ]
+      },
+      saasGrowth: {
+        id: 'saasGrowth',
+        name: 'SaaS Studio (Healthy Buffer)',
+        initialCash: 68000,
+        invoices: [
+          { id: 'inv-s1', client: 'Enterprise Cloud Systems', amount: 45000, dueDate: 10, confidence: 'high', status: 'pending', delayDays: 0, contactName: 'David Zhang', email: 'dzhang@cloudsystems.com' },
+          { id: 'inv-s2', client: 'Nordic Financial Tech', amount: 32000, dueDate: 28, confidence: 'high', status: 'pending', delayDays: 0, contactName: 'Astrid Lind', email: 'astrid@nordictech.se' },
+          { id: 'inv-s3', client: 'AeroDynamics Lab Subscription', amount: 28000, dueDate: 55, confidence: 'high', status: 'pending', delayDays: 0, contactName: 'Chris Bell', email: 'chris@aerolab.io' }
+        ],
+        expenses: [
+          { id: 'exp-s1', title: 'Core Product Engineering Salaries', amount: 26000, dueDayOfInterval: [1, 31, 61], category: 'Payroll', essential: true, delayedDays: 0 },
+          { id: 'exp-s2', title: 'Kubernetes Hosting & AI GPU Cluster', amount: 6500, dueDayOfInterval: [15, 45, 75], category: 'Vendor', essential: true, delayedDays: 0 },
+          { id: 'exp-s3', title: 'Corporate Downtown Coworking Lease', amount: 4000, dueDayOfInterval: [5, 35, 65], category: 'Rent', essential: true, delayedDays: 0 },
+          { id: 'exp-s4', title: 'Performance Ad Retargeting Budget', amount: 4500, dueDayOfInterval: [18, 48], category: 'Discretionary', essential: false, delayedDays: 0 }
+        ]
+      }
+    };
+
+    const NAVIGATION_TABS = [
+      { id: 'dashboard', stepNumber: 1, label: 'Predict', fullTitle: '1. Predict & Forecast', icon: Activity, desc: '30-90 Day Runway' },
+      { id: 'diagnostics', stepNumber: 2, label: 'Explain', fullTitle: '2. Explain Crunch', icon: BarChart3, desc: 'Root Causes' },
+      { id: 'simulator', stepNumber: 3, label: 'Simulate', fullTitle: '3. What-If Sandbox', icon: Sliders, desc: 'Stress Test Scenarios' },
+      { id: 'vendorHub', stepNumber: 4, label: 'Negotiate', fullTitle: '4. Negotiate Vendor', icon: Handshake, desc: 'Terms & Playbooks' },
+      { id: 'actions', stepNumber: 5, label: 'Act & Fix', fullTitle: '5. Act & Fix (AI)', icon: Zap, desc: 'One-Click Recalculate' },
+      { id: 'ledger', stepNumber: 6, label: 'Ledger', fullTitle: 'Cash Ledger', icon: FileText, desc: 'Inflows & Payables' },
+    ];
+
+    const formatCurrency = (val) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0
+      }).format(val || 0);
+    };
+
+    const parseCSVText = (text) => {
+      const lines = text.trim().split(/\r\n|\n/);
+      if (lines.length < 2) return { success: false, message: 'CSV requires a header row and at least one data row.' };
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+      const parsedInvoices = [];
+      const parsedExpenses = [];
+      let detectedCash = null;
+
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+        if (row.length < 2 || !row.some(Boolean)) continue;
+
+        const rowObj = {};
+        headers.forEach((h, idx) => {
+          rowObj[h] = row[idx] !== undefined ? row[idx] : '';
+        });
+
+        const type = (rowObj.type || rowObj.category || (parseFloat(rowObj.amount) < 0 ? 'expense' : 'income')).toLowerCase();
+        const amount = Math.abs(parseFloat(rowObj.amount || rowObj.value || 0));
+        const title = rowObj.title || rowObj.name || rowObj.description || rowObj.client || `Item #${i}`;
+        const day = parseInt(rowObj.day || rowObj.duedate || rowObj.date || '15', 10) || 15;
+
+        if (rowObj.type === 'balance' || title.toLowerCase().includes('opening cash')) {
+          detectedCash = amount;
+          continue;
+        }
+
+        if (type.includes('invoice') || type.includes('income') || type.includes('receivable') || type.includes('revenue')) {
+          parsedInvoices.push({
+            id: `csv-inv-${Date.now()}-${i}`,
+            client: title,
+            amount: isNaN(amount) ? 1000 : amount,
+            dueDate: Math.min(Math.max(1, day), 90),
+            confidence: (rowObj.confidence || 'medium').toLowerCase(),
+            status: 'pending',
+            delayDays: 0,
+            contactName: title.split(' ')[0] || 'Partner',
+            email: 'billing@client.com'
+          });
+        } else {
+          parsedExpenses.push({
+            id: `csv-exp-${Date.now()}-${i}`,
+            title: title,
+            amount: isNaN(amount) ? 500 : amount,
+            dueDayOfInterval: [Math.min(Math.max(1, day), 90)],
+            category: (rowObj.category || 'Vendor'),
+            essential: !['marketing', 'discretionary', 'capex', 'office perks'].some(k => (rowObj.category || '').toLowerCase().includes(k)),
+            delayedDays: 0
+          });
+        }
+      }
+
+      return {
+        success: true,
+        detectedCash,
+        invoices: parsedInvoices,
+        expenses: parsedExpenses,
+        totalRows: parsedInvoices.length + parsedExpenses.length
+      };
+    };
+
+    function CashFlowCopilot() {
+      const [isDark, setIsDark] = useState(() => {
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('cashflow_theme');
+          if (saved) return saved === 'dark';
+          return true;
+        }
+        return true;
+      });
+
+      const [selectedPresetKey, setSelectedPresetKey] = useState('agencyCrunch');
+      const [horizonDays, setHorizonDays] = useState(60);
+      const [activeTab, setActiveTab] = useState('dashboard');
+
+      // Ledger States
+      const [currentCash, setCurrentCash] = useState(PRESETS.agencyCrunch.initialCash);
+      const [invoices, setInvoices] = useState(PRESETS.agencyCrunch.invoices);
+      const [expenses, setExpenses] = useState(PRESETS.agencyCrunch.expenses);
+
+      // Undo history buffer for quick recovery
+      const [historyStack, setHistoryStack] = useState([]);
+
+      // Toast alert system
+      const [toastMessage, setToastMessage] = useState(null);
+      const [isRefreshing, setIsRefreshing] = useState(false);
+
+      // Chart Interactive Tooltip scrubbing state
+      const [hoveredDayData, setHoveredDayData] = useState(null);
+      const chartSvgRef = useRef(null);
+
+      // File Upload State
+      const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+      const [dragOver, setDragOver] = useState(false);
+      const [parsedPreview, setParsedPreview] = useState(null);
+      const fileInputRef = useRef(null);
+
+      // Modals for Adding Manual Rows
+      const [isAddModalOpen, setIsAddModalOpen] = useState(null);
+      const [newRowData, setNewRowData] = useState({
+        title: '',
+        amount: '',
+        day: 15,
+        category: 'Vendor',
+        confidence: 'high',
+        contactName: '',
+        email: '',
+        essential: true
+      });
+
+      // What-If Natural Language Box state
+      const [nlpPrompt, setNlpPrompt] = useState('');
+      const [nlpFeedback, setNlpFeedback] = useState(null);
+
+      // Quantitative Scenario Simulator Values
+      const [simClientDelay, setSimClientDelay] = useState(0);
+      const [simSelectedClient, setSimSelectedClient] = useState('inv-1');
+      const [simNewHireSalary, setSimNewHireSalary] = useState(0);
+      const [simHireHeadcount, setSimHireHeadcount] = useState(1);
+      const [simVendorDelayDays, setSimVendorDelayDays] = useState(0);
+      const [simRevenueShock, setSimRevenueShock] = useState(0);
+      const [simCapExDelay, setSimCapExDelay] = useState(false);
+
+      // Action Modals & Applied Action Registry
+      const [activeActionModal, setActiveActionModal] = useState(null);
+      const [copiedText, setCopiedText] = useState(false);
+      const [appliedActions, setAppliedActions] = useState({});
+
+      // Dedicated Vendor Negotiation Hub State
+      const [selectedVendorExpenseId, setSelectedVendorExpenseId] = useState('exp-4');
+      const [negotiationStrategy, setNegotiationStrategy] = useState('split_tranches');
+      const [negoTranchesCount, setNegoTranchesCount] = useState(3);
+      const [negoUpfrontPct, setNegoUpfrontPct] = useState(30);
+      const [negoExtensionDays, setNegoExtensionDays] = useState(21);
+      const [negoTone, setNegoTone] = useState('collaborative');
+      const [negoContactPhone, setNegoContactPhone] = useState('+1 (555) 349-2910');
+      const [negoContactEmail, setNegoContactEmail] = useState('vendor-accounts@provider.com');
+      const [counterOfferMode, setCounterOfferMode] = useState(false);
+      const [counterOfferUpfrontPct, setCounterOfferUpfrontPct] = useState(50);
+
+      const currentTabIndex = useMemo(() => {
+        return NAVIGATION_TABS.findIndex(t => t.id === activeTab);
+      }, [activeTab]);
+
+      const handleNextTab = () => {
+        if (currentTabIndex < NAVIGATION_TABS.length - 1) {
+          setActiveTab(NAVIGATION_TABS[currentTabIndex + 1].id);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      };
+
+      const handlePrevTab = () => {
+        if (currentTabIndex > 0) {
+          setActiveTab(NAVIGATION_TABS[currentTabIndex - 1].id);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      };
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+            return;
+          }
+          if (e.key === 'ArrowRight') {
+            if (currentTabIndex < NAVIGATION_TABS.length - 1) {
+              setActiveTab(NAVIGATION_TABS[currentTabIndex + 1].id);
+            }
+          } else if (e.key === 'ArrowLeft') {
+            if (currentTabIndex > 0) {
+              setActiveTab(NAVIGATION_TABS[currentTabIndex - 1].id);
+            }
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [currentTabIndex]);
+
+      const showToast = (title, description) => {
+        setToastMessage({ title, description });
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 4000);
+      };
+
+      const pushHistorySnapshot = (label) => {
+        setHistoryStack(prev => [
+          {
+            label,
+            currentCash,
+            invoices: JSON.parse(JSON.stringify(invoices)),
+            expenses: JSON.parse(JSON.stringify(expenses)),
+            appliedActions: { ...appliedActions }
+          },
+          ...prev.slice(0, 10)
+        ]);
+      };
+
+      const handleUndo = () => {
+        if (historyStack.length === 0) return;
+        const last = historyStack[0];
+        setCurrentCash(last.currentCash);
+        setInvoices(last.invoices);
+        setExpenses(last.expenses);
+        setAppliedActions(last.appliedActions);
+        setHistoryStack(prev => prev.slice(1));
+        showToast('State Restored', `Reverted: "${last.label}"`);
+      };
+
+      const handleLoadPreset = (key) => {
+        pushHistorySnapshot(`Loaded ${PRESETS[key].name}`);
+        const p = PRESETS[key];
+        setSelectedPresetKey(key);
+        setCurrentCash(p.initialCash);
+        setInvoices(JSON.parse(JSON.stringify(p.invoices)));
+        setExpenses(JSON.parse(JSON.stringify(p.expenses)));
+        setSimClientDelay(0);
+        setSimNewHireSalary(0);
+        setSimHireHeadcount(1);
+        setSimVendorDelayDays(0);
+        setSimRevenueShock(0);
+        setSimCapExDelay(false);
+        setAppliedActions({});
+        setNlpFeedback(null);
+        setHoveredDayData(null);
+        showToast('Preset Loaded', `Switched to ${p.name}`);
+      };
+
+      const handleRefreshWorkspace = () => {
+        setIsRefreshing(true);
+        pushHistorySnapshot(`Refreshed ${PRESETS[selectedPresetKey].name}`);
+        const p = PRESETS[selectedPresetKey];
+        setCurrentCash(p.initialCash);
+        setInvoices(JSON.parse(JSON.stringify(p.invoices)));
+        setExpenses(JSON.parse(JSON.stringify(p.expenses)));
+        setSimClientDelay(0);
+        setSimNewHireSalary(0);
+        setSimHireHeadcount(1);
+        setSimVendorDelayDays(0);
+        setSimRevenueShock(0);
+        setSimCapExDelay(false);
+        setAppliedActions({});
+        setNlpFeedback(null);
+        setNlpPrompt('');
+        setHoveredDayData(null);
+        setCounterOfferMode(false);
+        setTimeout(() => {
+          setIsRefreshing(false);
+          showToast('Workspace Refreshed', `Reset all variables & simulations for ${p.name}`);
+        }, 450);
+      };
+
+      const {
+        timelineData,
+        simulatedTimelineData,
+        lowestExpectedCash,
+        crunchDay,
+        simulatedLowestCash,
+        simulatedCrunchDay
+      } = useMemo(() => {
+        const days = horizonDays;
+        const baseCurve = [];
+        const simCurve = [];
+
+        let baseBalance = currentCash;
+        let worstBalance = currentCash;
+        let bestBalance = currentCash;
+        let simBalance = currentCash;
+
+        let firstCrunch = null;
+        let firstSimCrunch = null;
+
+        let minBase = currentCash;
+        let minSim = currentCash;
+
+        for (let day = 0; day <= days; day++) {
+          let dayInflowBase = 0;
+          let dayInflowWorst = 0;
+          let dayInflowBest = 0;
+          let dayOutflow = 0;
+          const dayInflowItems = [];
+          const dayOutflowItems = [];
+
+          invoices.forEach(inv => {
+            if (inv.status === 'paid') return;
+            const effectiveDue = inv.dueDate + (inv.delayDays || 0);
+            if (effectiveDue === day) {
+              dayInflowBase += inv.amount;
+              dayInflowBest += inv.amount * 1.05;
+              const riskMultiplier = inv.confidence === 'high' ? 0.95 : inv.confidence === 'medium' ? 0.65 : 0.35;
+              dayInflowWorst += inv.amount * riskMultiplier;
+              dayInflowItems.push(inv);
+            }
+          });
+
+          expenses.forEach(exp => {
+            const effectiveDueDays = exp.dueDayOfInterval.map(d => d + (exp.delayedDays || 0));
+            if (effectiveDueDays.includes(day)) {
+              dayOutflow += exp.amount;
+              dayOutflowItems.push(exp);
+            }
+          });
+
+          if (day > 0) {
+            baseBalance = baseBalance + dayInflowBase - dayOutflow;
+            worstBalance = worstBalance + dayInflowWorst - (dayOutflow * 1.05);
+            bestBalance = bestBalance + dayInflowBest - dayOutflow;
+          }
+
+          if (baseBalance < minBase) minBase = baseBalance;
+          if (baseBalance < 0 && firstCrunch === null) {
+            firstCrunch = day;
+          }
+
+          baseCurve.push({
+            day,
+            base: Math.round(baseBalance),
+            worst: Math.round(worstBalance),
+            best: Math.round(bestBalance),
+            inflow: dayInflowBase,
+            outflow: dayOutflow,
+            inflowItems: dayInflowItems,
+            outflowItems: dayOutflowItems
+          });
+
+          // Simulation computation
+          let simDayInflow = 0;
+          let simDayOutflow = 0;
+
+          invoices.forEach(inv => {
+            if (inv.status === 'paid') return;
+            let effectiveDue = inv.dueDate + (inv.delayDays || 0);
+            if (inv.id === simSelectedClient && simClientDelay > 0) {
+              effectiveDue += simClientDelay;
+            }
+            if (effectiveDue === day) {
+              let amt = inv.amount * (1 - (simRevenueShock / 100));
+              simDayInflow += amt;
+            }
+          });
+
+          expenses.forEach(exp => {
+            if (simCapExDelay && !exp.essential) return;
+            let dueList = [...exp.dueDayOfInterval];
+            if (exp.category === 'Vendor' && simVendorDelayDays > 0) {
+              dueList = dueList.map(d => d + simVendorDelayDays);
+            }
+            const effectiveDueDays = dueList.map(d => d + (exp.delayedDays || 0));
+            if (effectiveDueDays.includes(day)) {
+              simDayOutflow += exp.amount;
+            }
+          });
+
+          if (simNewHireSalary > 0) {
+            const recurringDates = [15, 45, 75].filter(d => d <= days);
+            if (recurringDates.includes(day)) {
+              simDayOutflow += (simNewHireSalary * (simHireHeadcount || 1));
+            }
+          }
+
+          if (day > 0) {
+            simBalance = simBalance + simDayInflow - simDayOutflow;
+          }
+
+          if (simBalance < minSim) minSim = simBalance;
+          if (simBalance < 0 && firstSimCrunch === null) {
+            firstSimCrunch = day;
+          }
+
+          simCurve.push({
+            day,
+            simCash: Math.round(simBalance),
+            simInflow: simDayInflow,
+            simOutflow: simDayOutflow
+          });
+        }
+
+        return {
+          timelineData: baseCurve,
+          simulatedTimelineData: simCurve,
+          lowestExpectedCash: minBase,
+          crunchDay: firstCrunch,
+          simulatedLowestCash: minSim,
+          simulatedCrunchDay: firstSimCrunch
+        };
+      }, [
+        currentCash,
+        invoices,
+        expenses,
+        horizonDays,
+        simClientDelay,
+        simSelectedClient,
+        simNewHireSalary,
+        simHireHeadcount,
+        simVendorDelayDays,
+        simRevenueShock,
+        simCapExDelay
+      ]);
+
+      const totalUpcomingInflow = useMemo(() => {
+        return invoices
+          .filter(i => i.status !== 'paid' && (i.dueDate + (i.delayDays || 0)) <= horizonDays)
+          .reduce((acc, curr) => acc + curr.amount, 0);
+      }, [invoices, horizonDays]);
+
+      const totalUpcomingOutflow = useMemo(() => {
+        let sum = 0;
+        expenses.forEach(exp => {
+          const occurrences = exp.dueDayOfInterval.filter(d => (d + (exp.delayedDays || 0)) <= horizonDays).length;
+          sum += exp.amount * occurrences;
+        });
+        return sum;
+      }, [expenses, horizonDays]);
+
+      const projectedRunwayDays = useMemo(() => {
+        if (crunchDay) return crunchDay;
+        const lastDayBalance = timelineData[timelineData.length - 1]?.base;
+        if (lastDayBalance < 0) {
+          const idx = timelineData.findIndex(d => d.base < 0);
+          return idx !== -1 ? idx : `> ${horizonDays}`;
+        }
+        return `> ${horizonDays}`;
+      }, [crunchDay, timelineData, horizonDays]);
+
+      const activeNegotiationExpense = useMemo(() => {
+        return expenses.find(e => e.id === selectedVendorExpenseId) || expenses[0] || {
+          id: 'exp-fallback',
+          title: 'Cloud Infrastructure Tier',
+          amount: 4200,
+          dueDayOfInterval: [12],
+          category: 'Vendor',
+          essential: true
+        };
+      }, [expenses, selectedVendorExpenseId]);
+
+      const negotiationCalculations = useMemo(() => {
+        const exp = activeNegotiationExpense;
+        const originalAmt = exp.amount;
+        const originalPrimaryDay = exp.dueDayOfInterval[0] || 15;
+        const isCrunchWindow = crunchDay && Math.abs(originalPrimaryDay - crunchDay) <= 10;
+
+        let proposedNewOutflows = [];
+        let cashSavedDuringCrunch = 0;
+
+        if (counterOfferMode) {
+          const upfront = Math.round(originalAmt * (counterOfferUpfrontPct / 100));
+          const remainder = originalAmt - upfront;
+          proposedNewOutflows = [
+            { day: originalPrimaryDay, amount: upfront, label: `Immediate Counter Base (${counterOfferUpfrontPct}%)` },
+            { day: originalPrimaryDay + 30, amount: remainder, label: `Deferred Counter Balance (${100 - counterOfferUpfrontPct}%)` }
+          ];
+          cashSavedDuringCrunch = isCrunchWindow ? (originalAmt - upfront) : Math.round(originalAmt * 0.5);
+        } else if (negotiationStrategy === 'split_tranches') {
+          if (negoTranchesCount === 2) {
+            const p1 = Math.round(originalAmt * 0.5);
+            const p2 = originalAmt - p1;
+            proposedNewOutflows = [
+              { day: originalPrimaryDay, amount: p1, label: 'Tranche 1 (50%)' },
+              { day: originalPrimaryDay + 25, amount: p2, label: 'Tranche 2 (50%)' }
+            ];
+            cashSavedDuringCrunch = isCrunchWindow ? p2 : originalAmt * 0.5;
+          } else {
+            const p1 = Math.round(originalAmt * (negoUpfrontPct / 100));
+            const rem = originalAmt - p1;
+            const p2 = Math.round(rem / 2);
+            const p3 = rem - p2;
+            proposedNewOutflows = [
+              { day: originalPrimaryDay, amount: p1, label: `Tranche 1 (${negoUpfrontPct}%)` },
+              { day: originalPrimaryDay + 20, amount: p2, label: 'Tranche 2' },
+              { day: originalPrimaryDay + 45, amount: p3, label: 'Tranche 3' }
+            ];
+            cashSavedDuringCrunch = isCrunchWindow ? (originalAmt - p1) : Math.round(originalAmt * 0.65);
+          }
+        } else if (negotiationStrategy === 'grace_extension') {
+          proposedNewOutflows = [
+            { day: originalPrimaryDay + negoExtensionDays, amount: originalAmt, label: `Deferred Net-${negoExtensionDays}` }
+          ];
+          cashSavedDuringCrunch = isCrunchWindow ? originalAmt : originalAmt;
+        } else if (negotiationStrategy === 'partial_advance') {
+          const upfront = Math.round(originalAmt * 0.25);
+          const balloon = originalAmt - upfront;
+          proposedNewOutflows = [
+            { day: originalPrimaryDay, amount: upfront, label: 'Good Faith Advance (25%)' },
+            { day: originalPrimaryDay + 35, amount: balloon, label: 'Settlement Balloon (75%)' }
+          ];
+          cashSavedDuringCrunch = isCrunchWindow ? balloon : balloon;
+        } else {
+          const reduced = Math.round(originalAmt * 0.6);
+          proposedNewOutflows = [
+            { day: originalPrimaryDay, amount: reduced, label: 'Optimized Downgrade (-40%)' }
+          ];
+          cashSavedDuringCrunch = originalAmt - reduced;
+        }
+
+        const projectedMinCash = lowestExpectedCash + cashSavedDuringCrunch;
+        const runwayExtensionDaysEstimate = lowestExpectedCash < 0 && projectedMinCash >= 0
+          ? 18
+          : (lowestExpectedCash < 0 ? Math.min(25, Math.round(cashSavedDuringCrunch / 600)) : 7);
+
+        return {
+          proposedNewOutflows,
+          cashSavedDuringCrunch,
+          projectedMinCash,
+          runwayExtensionDaysEstimate
+        };
+      }, [
+        activeNegotiationExpense,
+        negotiationStrategy,
+        negoTranchesCount,
+        negoUpfrontPct,
+        negoExtensionDays,
+        counterOfferMode,
+        counterOfferUpfrontPct,
+        lowestExpectedCash,
+        crunchDay
+      ]);
+
+      const negotiationCommunications = useMemo(() => {
+        const exp = activeNegotiationExpense;
+        const vendorTitle = exp.title;
+        const amountStr = formatCurrency(exp.amount);
+
+        let toneGreeting = 'Dear Accounts Team,';
+        let toneSignoff = 'Best regards,\nTreasury & Accounts Operations';
+
+        if (negoTone === 'collaborative') {
+          toneGreeting = 'Hi Partnership & Finance Team,';
+          toneSignoff = 'Warm regards and appreciation for your partnership,\nFinance Operations';
+        } else if (negoTone === 'firm') {
+          toneGreeting = 'Attention: Vendor Commercial Relations,';
+          toneSignoff = 'Sincerely,\nHead of Financial Planning & Analysis';
+        } else if (negoTone === 'restructuring') {
+          toneGreeting = 'Dear Finance & Billing Department,';
+          toneSignoff = 'Respectfully submitted,\nExecutive Management & Treasury';
+        }
+
+        let strategySpecificBody = '';
+        let shortWhatsAppText = '';
+        let phoneTalkingPoints = [];
+
+        if (counterOfferMode) {
+          strategySpecificBody = `Following up on our discussions regarding our ${amountStr} commitment. While our preference was a 30-day deferral, we are prepared to accommodate your counter-proposal by remitting ${counterOfferUpfrontPct}% (${formatCurrency(Math.round(exp.amount * (counterOfferUpfrontPct / 100)))}) immediately, with the remaining balance scheduled strictly on Day 35.`;
+          shortWhatsAppText = `Hi! Following up regarding invoice ${vendorTitle} (${amountStr}). We can approve your counter-offer: ${counterOfferUpfrontPct}% upfront today, remaining balance cleared on Day 35. Please confirm!`;
+          phoneTalkingPoints = [
+            `Acknowledge vendor counter-offer: "We reviewed your request for an upfront commitment."`,
+            `Firm concession boundary: "We can release ${counterOfferUpfrontPct}% immediately today via wire."`,
+            `Lock condition: "In exchange, the remaining ${100 - counterOfferUpfrontPct}% must be held without interest or penalties until Day 35."`
+          ];
+        } else if (negotiationStrategy === 'split_tranches') {
+          strategySpecificBody = `We are conducting our regular quarterly working capital balance and propose restructuring the upcoming billing of ${amountStr} into a multi-part installment agreement:\n` +
+            negotiationCalculations.proposedNewOutflows.map((p, i) => `  • Installment ${i + 1}: ${formatCurrency(p.amount)} due on Day ${p.day}`).join('\n') +
+            `\n\nThis distribution ensures uninterrupted commercial execution while adhering to our treasury disbursement schedules.`;
+          shortWhatsAppText = `Hi team, regarding our upcoming bill for ${vendorTitle} (${amountStr}) — to streamline our month-end schedule, we would like to split this into ${negoTranchesCount} installments starting with ${negoUpfrontPct}% this week. Please let us know if accounts can confirm this!`;
+          phoneTalkingPoints = [
+            `Lead with partnership history: "We love working together and want to maintain prompt predictability."`,
+            `State terms clearly: "We are queuing a multi-part tranche schedule starting today."`,
+            `Mutual gain: "This guarantees timely settlements rather than facing processing delays."`
+          ];
+        } else if (negotiationStrategy === 'grace_extension') {
+          strategySpecificBody = `In light of seasonal client remittance alignments, we request a temporary ${negoExtensionDays}-day Net payment term extension for ${amountStr} (re-scheduled to Day ${((exp.dueDayOfInterval[0] || 15) + negoExtensionDays)}).\n\nAll existing services will remain fully contracted, and standard payment schedules will resume promptly thereafter.`;
+          shortWhatsAppText = `Hello! Proactively reaching out regarding ${vendorTitle} (${amountStr}). Our incoming client clears in 3 weeks, so we request adjusting this invoice to Net-${negoExtensionDays}. Appreciate your flexibility!`;
+          phoneTalkingPoints = [
+            `Explain receivables timeline: "Our large enterprise milestone clears in 20 days."`,
+            `Ask for grace extension: "Can we extend this invoice date by ${negoExtensionDays} days to match our inflow?"`,
+            `Reiterate clean credit history: "We have consistently fulfilled all our agreements."`
+          ];
+        } else if (negotiationStrategy === 'partial_advance') {
+          strategySpecificBody = `To demonstrate good faith while maintaining liquidity across upcoming payroll periods, we propose an immediate 25% remittance (${formatCurrency(Math.round(exp.amount * 0.25))}), with the remaining 75% deferred to Day 35.\n\nThis ensures your accounts receive immediate cash flow without interrupting our deliverables.`;
+          shortWhatsAppText = `Hi! Proposing an immediate 25% cash advance on ${vendorTitle} today, with the remainder settled in 35 days. Let us know if we can wire the 25% right away!`;
+          phoneTalkingPoints = [
+            `Offer instant liquidity: "I can process a 25% direct transfer this afternoon."`,
+            `Define balloon date: "The remainder will be cleared cleanly on Day 35 once our accounts receivable mature."`
+          ];
+        } else {
+          strategySpecificBody = `We are streamlining our resource consumption for ${vendorTitle} and would like to adjust our active tier to eliminate non-utilized capacity, targeting an updated monthly billing of ${formatCurrency(Math.round(exp.amount * 0.6))}.\n\nKindly confirm the adjusted tier activation.`;
+          shortWhatsAppText = `Hi Team, we want to optimize our usage tier for ${vendorTitle} down to the essentials this quarter, bringing monthly spend to ${formatCurrency(Math.round(exp.amount * 0.6))}. Can your rep assist?`;
+          phoneTalkingPoints = [
+            `Reference resource utilization: "We're auditing redundant nodes/licenses."`,
+            `Request tier adjustment: "We want to scale down by 40% for the next 2 cycles without terminating our contract."`
+          ];
+        }
+
+        const emailSubject = `Payment Schedule Adjustment Request: ${vendorTitle} (${amountStr}) - Reference #${exp.id.toUpperCase()}`;
+        const emailBody = `${toneGreeting}\n\n${strategySpecificBody}\n\nThank you in advance for your ongoing collaboration and flexibility.\n\n${toneSignoff}`;
+
+        return {
+          subject: emailSubject,
+          body: emailBody,
+          whatsapp: shortWhatsAppText,
+          talkingPoints: phoneTalkingPoints
+        };
+      }, [
+        activeNegotiationExpense,
+        negotiationStrategy,
+        negoTranchesCount,
+        negoUpfrontPct,
+        negoExtensionDays,
+        negoTone,
+        counterOfferMode,
+        counterOfferUpfrontPct,
+        negotiationCalculations
+      ]);
+
+      const handleCommitVendorNegotiationToForecast = () => {
+        pushHistorySnapshot(`Negotiated Vendor: ${activeNegotiationExpense.title}`);
+        const exp = activeNegotiationExpense;
+
+        setExpenses(prev => {
+          const filtered = prev.filter(e => e.id !== exp.id);
+          const newItems = negotiationCalculations.proposedNewOutflows.map((p, idx) => ({
+            id: `${exp.id}-nego-${idx + 1}-${Date.now()}`,
+            title: `${exp.title} (${p.label})`,
+            amount: p.amount,
+            dueDayOfInterval: [p.day],
+            category: exp.category,
+            essential: exp.essential,
+            delayedDays: 0
+          }));
+          return [...filtered, ...newItems];
+        });
+
+        setAppliedActions(prev => ({
+          ...prev,
+          [`nego-${activeNegotiationExpense.id}`]: true
+        }));
+
+        showToast(
+          'Vendor Deal Committed!',
+          `Restructured ${activeNegotiationExpense.title}. Saved ${formatCurrency(negotiationCalculations.cashSavedDuringCrunch)} in the crunch window.`
+        );
+      };
+
+      const handleApplyActionExecution = (actionKey, mutationFn, successMessage) => {
+        pushHistorySnapshot(`Applied Action: ${actionKey}`);
+        mutationFn();
+        setAppliedActions(prev => ({ ...prev, [actionKey]: true }));
+        showToast('Action Applied to Forecast', successMessage);
+      };
+
+      const toggleInvoiceStatus = (id) => {
+        pushHistorySnapshot('Toggle Invoice Status');
+        setInvoices(prev => prev.map(inv => {
+          if (inv.id === id) {
+            const next = inv.status === 'paid' ? 'pending' : 'paid';
+            return { ...inv, status: next };
+          }
+          return inv;
+        }));
+      };
+
+      const deleteInvoice = (id) => {
+        pushHistorySnapshot('Delete Invoice');
+        setInvoices(prev => prev.filter(inv => inv.id !== id));
+        showToast('Receivable Removed', 'Invoice entry deleted from cash ledger.');
+      };
+
+      const deleteExpense = (id) => {
+        pushHistorySnapshot('Delete Expense');
+        setExpenses(prev => prev.filter(exp => exp.id !== id));
+        showToast('Payable Removed', 'Expense item deleted from cash ledger.');
+      };
+
+      const handleSaveCustomRow = (e) => {
+        e.preventDefault();
+        if (!newRowData.title || !newRowData.amount) return;
+
+        pushHistorySnapshot(`Added ${isAddModalOpen}`);
+        const amt = parseFloat(newRowData.amount);
+        const day = parseInt(newRowData.day, 10) || 15;
+
+        if (isAddModalOpen === 'invoice') {
+          const newInv = {
+            id: `custom-inv-${Date.now()}`,
+            client: newRowData.title,
+            amount: amt,
+            dueDate: day,
+            confidence: newRowData.confidence || 'high',
+            status: 'pending',
+            delayDays: 0,
+            contactName: newRowData.title.split(' ')[0] || 'Client',
+            email: 'billing@client.com'
+          };
+          setInvoices(prev => [...prev, newInv]);
+          showToast('Receivable Added', `${newInv.client} scheduled for Day ${newInv.dueDate}.`);
+        } else {
+          const newExp = {
+            id: `custom-exp-${Date.now()}`,
+            title: newRowData.title,
+            amount: amt,
+            dueDayOfInterval: [day],
+            category: newRowData.category || 'Vendor',
+            essential: newRowData.essential,
+            delayedDays: 0
+          };
+          setExpenses(prev => [...prev, newExp]);
+          showToast('Payable Scheduled', `${newExp.title} scheduled for Day ${day}.`);
+        }
+
+        setIsAddModalOpen(null);
+      };
+
+      const handleNaturalLanguageSimulation = (e) => {
+        e.preventDefault();
+        if (!nlpPrompt.trim()) return;
+
+        const query = nlpPrompt.toLowerCase();
+        const rulesApplied = [];
+
+        if (query.includes('hire') || query.includes('recruit') || query.includes('engineer') || query.includes('developer')) {
+          const countMatch = query.match(/(\d+)\s*(hire|engineers|people|devs|members)/);
+          const salaryMatch = query.match(/(\$|usd)?\s*(\d{1,6})\s*(k|\/mo|each|salary)?/);
+
+          const count = countMatch ? parseInt(countMatch[1], 10) : 1;
+          let salary = 4500;
+          if (salaryMatch) {
+            let num = parseInt(salaryMatch[2], 10);
+            if (query.includes('k') && num < 100) num *= 1000;
+            salary = num > 100 ? num : 4500;
+          }
+          setSimNewHireSalary(salary);
+          setSimHireHeadcount(count);
+          rulesApplied.push(`Adding ${count} hire(s) at ${formatCurrency(salary)}/mo`);
+        }
+
+        if (query.includes('late') || query.includes('delay') || query.includes('pays in') || query.includes('pays 20 days')) {
+          const daysMatch = query.match(/(\d+)\s*(day|days|d|weeks)/);
+          let days = 20;
+          if (daysMatch) {
+            days = parseInt(daysMatch[1], 10);
+            if (query.includes('week')) days *= 7;
+          }
+          setSimClientDelay(days);
+          rulesApplied.push(`Delaying client receivable by ${days} days`);
+        }
+
+        if (query.includes('revenue drops') || query.includes('sales down') || query.includes('drop by') || query.includes('%')) {
+          const pctMatch = query.match(/(\d+)\s*%/);
+          const pct = pctMatch ? parseInt(pctMatch[1], 10) : 25;
+          setSimRevenueShock(pct);
+          rulesApplied.push(`Simulating ${pct}% top-line revenue decline`);
+        }
+
+        if (query.includes('freeze capex') || query.includes('delay capex') || query.includes('cut non-essential')) {
+          setSimCapExDelay(true);
+          rulesApplied.push('Freezing non-essential CapEx & discretionary spend');
+        }
+
+        if (rulesApplied.length > 0) {
+          setNlpFeedback({ query: nlpPrompt, rules: rulesApplied });
+          showToast('Scenario Simulated', rulesApplied.join(' & '));
+        } else {
+          setNlpFeedback({
+            query: nlpPrompt,
+            rules: ['Simulated general liquidity stress (+14 day client slip, $3.5k spend)']
+          });
+          setSimClientDelay(14);
+          setSimNewHireSalary(3500);
+          setSimHireHeadcount(1);
+        }
+      };
+
+      const handleFileUpload = (file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target.result;
+          const res = parseCSVText(text);
+          if (res.success) {
+            setParsedPreview(res);
+          } else {
+            showToast('CSV Parsing Failed', res.message);
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      const commitParsedUpload = () => {
+        if (!parsedPreview) return;
+        pushHistorySnapshot('Imported CSV data');
+
+        if (parsedPreview.detectedCash !== null) {
+          setCurrentCash(parsedPreview.detectedCash);
+        }
+        if (parsedPreview.invoices.length > 0) {
+          setInvoices(prev => [...prev, ...parsedPreview.invoices]);
+        }
+        if (parsedPreview.expenses.length > 0) {
+          setExpenses(prev => [...prev, ...parsedPreview.expenses]);
+        }
+
+        showToast('Import Complete', `Added ${parsedPreview.invoices.length} receivables and ${parsedPreview.expenses.length} liabilities.`);
+        setParsedPreview(null);
+        setIsUploadModalOpen(false);
+      };
+
+      const handleDownloadSampleCSV = () => {
+        const sample = `Type,Title,Amount,Day,Confidence,Category
+balance,Opening Cash Balance,25000,1,high,Cash
+receivable,Enterprise Client Renewal,18000,10,high,Revenue
+receivable,Mid-Market SaaS Retainer,9500,24,medium,Revenue
+payable,Engineering Payroll,14000,5,high,Payroll
+payable,Quarterly Tax Advance,6200,20,high,Tax
+payable,Cloud Hosting Cluster,3100,15,high,Vendor
+payable,Marketing Agency Retainer,4000,28,low,Discretionary`;
+
+        const blob = new Blob([sample], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'cashflow_sample_template.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      const handleExportCSV = () => {
+        let rows = [
+          ['Record Type', 'Title/Client', 'Amount', 'Scheduled Day', 'Confidence/Category', 'Status']
+        ];
+
+        invoices.forEach(inv => {
+          rows.push(['Receivable', inv.client, inv.amount, inv.dueDate, inv.confidence, inv.status]);
+        });
+
+        expenses.forEach(exp => {
+          rows.push(['Payable', exp.title, exp.amount, exp.dueDayOfInterval.join('|'), exp.category, exp.essential ? 'Essential' : 'Discretionary']);
+        });
+
+        const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `cashflow_ledger_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Export Ready', 'Cash ledger downloaded as CSV.');
+      };
+
+      const crunchExplanation = useMemo(() => {
+        if (!crunchDay) {
+          return {
+            severity: 'healthy',
+            message: 'No cash deficit detected in selected projection window.',
+            causes: ['Scheduled customer receipts sufficiently balance regular fixed overheads.']
+          };
+        }
+
+        const windowStart = Math.max(0, crunchDay - 8);
+        const heavyExpenses = [];
+        expenses.forEach(e => {
+          e.dueDayOfInterval.forEach(d => {
+            if (d >= windowStart && d <= crunchDay + 3) {
+              heavyExpenses.push({ name: e.title, amount: e.amount, day: d, category: e.category });
+            }
+          });
+        });
+
+        const delayedOrAtRiskInvoices = invoices.filter(inv => inv.confidence !== 'high' || (inv.dueDate >= windowStart && inv.dueDate <= crunchDay + 5));
+        const mainDriverExpense = heavyExpenses.sort((a,b) => b.amount - a.amount)[0];
+        const lateClient = delayedOrAtRiskInvoices[0];
+
+        return {
+          severity: 'critical',
+          message: `Negative cash threshold breached around Day ${crunchDay} (Trough: ${formatCurrency(lowestExpectedCash)}).`,
+          causes: [
+            mainDriverExpense ? `Major committed liability: "${mainDriverExpense.name}" (${formatCurrency(mainDriverExpense.amount)}) scheduled on Day ${mainDriverExpense.day}.` : 'Concentrated payroll & statutory obligations.',
+            lateClient ? `Pending receivable on "${lateClient.client}" (${formatCurrency(lateClient.amount)}) matures close to the crunch date.` : 'Receivables clearing too late.',
+            'Fixed liabilities (Payroll & Taxes) take precedence before customer remittances complete clearance.'
+          ]
+        };
+      }, [crunchDay, lowestExpectedCash, expenses, invoices]);
+
+      const renderChart = () => {
+        const width = 860;
+        const height = 300;
+        const padding = { top: 25, right: 35, bottom: 40, left: 65 };
+
+        const chartW = width - padding.left - padding.right;
+        const chartH = height - padding.top - padding.bottom;
+
+        const allVals = [0];
+        timelineData.forEach(d => {
+          allVals.push(d.base, d.worst, d.best);
+        });
+        simulatedTimelineData.forEach(d => {
+          allVals.push(d.simCash);
+        });
+
+        const minVal = Math.min(...allVals);
+        const maxVal = Math.max(...allVals);
+
+        const yMin = Math.floor((minVal < 0 ? minVal * 1.2 : -5000) / 5000) * 5000;
+        const yMax = Math.ceil((maxVal * 1.15) / 5000) * 5000;
+        const yRange = yMax - yMin || 1;
+
+        const getX = (day) => padding.left + (day / horizonDays) * chartW;
+        const getY = (val) => padding.top + chartH - ((val - yMin) / yRange) * chartH;
+
+        const zeroY = getY(0);
+
+        const makePath = (data, accessor) => {
+          return data.reduce((acc, curr, idx) => {
+            const x = getX(curr.day);
+            const y = getY(accessor(curr));
+            return idx === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
+          }, '');
+        };
+
+        const basePath = makePath(timelineData, d => d.base);
+        const worstPath = makePath(timelineData, d => d.worst);
+        const bestPath = makePath(timelineData, d => d.best);
+        const simPath = makePath(simulatedTimelineData, d => d.simCash);
+
+        const handleSvgMouseMove = (e) => {
+          if (!chartSvgRef.current) return;
+          const rect = chartSvgRef.current.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const svgX = (mouseX / rect.width) * width;
+
+          if (svgX < padding.left || svgX > width - padding.right) {
+            setHoveredDayData(null);
+            return;
+          }
+
+          const ratio = (svgX - padding.left) / chartW;
+          const day = Math.min(Math.max(0, Math.round(ratio * horizonDays)), horizonDays);
+
+          const baseItem = timelineData[day] || timelineData[0];
+          const simItem = simulatedTimelineData[day] || simulatedTimelineData[0];
+
+          setHoveredDayData({
+            day,
+            x: getX(day),
+            baseY: getY(baseItem.base),
+            simY: getY(simItem.simCash),
+            baseCash: baseItem.base,
+            worstCash: baseItem.worst,
+            bestCash: baseItem.best,
+            simCash: simItem.simCash,
+            inflow: baseItem.inflow,
+            outflow: baseItem.outflow
+          });
+        };
+
+        return (
+          <div className={`border rounded-2xl p-5 sm:p-6 transition-all shadow-sm ${
+            isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200/90'
+          }`}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <h3 className={`font-semibold text-sm sm:text-base tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                    30 / 60 / 90-Day Cash Trajectory
+                  </h3>
+                </div>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Hover or scrub across the timeline to inspect daily cash balance, expected receipts, and burn points.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center p-0.5 rounded-xl border ${
+                  isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-100 border-slate-200'
+                }`}>
+                  {[30, 60, 90].map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setHorizonDays(d)}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        horizonDays === d
+                          ? 'bg-amber-400 text-slate-950 shadow-sm'
+                          : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {d}d
+                    </button>
+                  ))}
+                </div>
+
+                {historyStack.length > 0 && (
+                  <button
+                    onClick={handleUndo}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                      isDark ? 'bg-slate-950/80 border-slate-800 text-slate-300 hover:border-amber-400/50 hover:text-amber-400' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                    title={`Undo last action (${historyStack[0]?.label})`}
+                  >
+                    <Undo2 className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="hidden sm:inline">Undo</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className={`flex flex-wrap items-center gap-4 text-xs mb-3 pb-3 border-b ${isDark ? 'border-slate-800/80' : 'border-slate-100'}`}>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-0.5 rounded-full bg-emerald-500"></span>
+                <span className={`text-[11px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Expected Base</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-0.5 rounded-full bg-emerald-300"></span>
+                <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Best Case (+5%)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-0.5 rounded-full bg-amber-400"></span>
+                <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Worst Case (Delays)</span>
+              </div>
+              {(simClientDelay > 0 || simNewHireSalary > 0 || simVendorDelayDays > 0 || simRevenueShock > 0 || simCapExDelay) && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-0.5 rounded-full bg-amber-400 border-b border-dashed border-amber-300"></span>
+                  <span className="text-[11px] font-semibold text-amber-500">Simulated Scenario</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <span className="w-3 h-0.5 bg-rose-500 border-b border-dashed"></span>
+                <span className="text-[11px] font-medium text-rose-500">$0 Threshold</span>
+              </div>
+            </div>
+
+            {/* Chart Canvas */}
+            <div className="relative w-full overflow-hidden">
+              <svg
+                ref={chartSvgRef}
+                viewBox={`0 0 ${width} ${height}`}
+                className="w-full h-auto select-none cursor-crosshair"
+                onMouseMove={handleSvgMouseMove}
+                onMouseLeave={() => setHoveredDayData(null)}
+              >
+                {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+                  const val = yMin + pct * yRange;
+                  const y = getY(val);
+                  return (
+                    <g key={i}>
+                      <line
+                        x1={padding.left}
+                        y1={y}
+                        x2={width - padding.right}
+                        y2={y}
+                        stroke={isDark ? 'rgba(51, 65, 85, 0.35)' : 'rgba(226, 232, 240, 0.8)'}
+                        strokeDasharray={val === 0 ? 'none' : '3 3'}
+                        strokeWidth={val === 0 ? 1.5 : 1}
+                      />
+                      <text
+                        x={padding.left - 10}
+                        y={y + 3.5}
+                        fontSize="10"
+                        textAnchor="end"
+                        fill={val === 0 ? '#ef4444' : (isDark ? '#64748b' : '#94a3b8')}
+                        fontFamily="monospace"
+                      >
+                        {formatCurrency(val)}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {zeroY >= padding.top && zeroY <= height - padding.bottom && (
+                  <line
+                    x1={padding.left}
+                    y1={zeroY}
+                    x2={width - padding.right}
+                    y2={zeroY}
+                    stroke="#ef4444"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 4"
+                    strokeOpacity="0.8"
+                  />
+                )}
+
+                {[10, 20, 30, 45, 60, 75, 90].filter(d => d <= horizonDays).map((d) => {
+                  const x = getX(d);
+                  return (
+                    <g key={d}>
+                      <line
+                        x1={x}
+                        y1={padding.top}
+                        x2={x}
+                        y2={height - padding.bottom}
+                        stroke={isDark ? 'rgba(51, 65, 85, 0.2)' : 'rgba(241, 245, 249, 0.9)'}
+                        strokeWidth="1"
+                        strokeDasharray="2 2"
+                      />
+                      <text
+                        x={x}
+                        y={height - padding.bottom + 16}
+                        fontSize="10"
+                        textAnchor="middle"
+                        fill={isDark ? '#64748b' : '#94a3b8'}
+                      >
+                        Day {d}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                <path
+                  d={`${basePath} L ${getX(horizonDays)} ${getY(yMin)} L ${getX(0)} ${getY(yMin)} Z`}
+                  fill={isDark ? 'url(#greenDarkGrad)' : 'url(#greenLightGrad)'}
+                  opacity={isDark ? "0.2" : "0.35"}
+                />
+
+                <path d={worstPath} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.75" />
+                <path d={bestPath} fill="none" stroke="#6ee7b7" strokeWidth="1.5" strokeOpacity="0.6" />
+                <path d={basePath} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
+
+                {(simClientDelay > 0 || simNewHireSalary > 0 || simVendorDelayDays > 0 || simRevenueShock > 0 || simCapExDelay) && (
+                  <path d={simPath} fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeDasharray="5 3" />
+                )}
+
+                {crunchDay && crunchDay <= horizonDays && (
+                  <g>
+                    <circle
+                      cx={getX(crunchDay)}
+                      cy={getY(0)}
+                      r="5"
+                      fill="#ef4444"
+                      className="animate-ping opacity-60"
+                    />
+                    <circle
+                      cx={getX(crunchDay)}
+                      cy={getY(0)}
+                      r="4"
+                      fill="#ef4444"
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                    />
+                  </g>
+                )}
+
+                {hoveredDayData && (
+                  <g>
+                    <line
+                      x1={hoveredDayData.x}
+                      y1={padding.top}
+                      x2={hoveredDayData.x}
+                      y2={height - padding.bottom}
+                      stroke={isDark ? 'rgba(250, 204, 21, 0.6)' : 'rgba(245, 158, 11, 0.7)'}
+                      strokeWidth="1"
+                      strokeDasharray="2 2"
+                    />
+                    <circle
+                      cx={hoveredDayData.x}
+                      cy={hoveredDayData.baseY}
+                      r="4"
+                      fill="#10b981"
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                    />
+                  </g>
+                )}
+
+                <defs>
+                  <linearGradient id="greenDarkGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                  </linearGradient>
+                  <linearGradient id="greenLightGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+              </svg>
+
+              {hoveredDayData && (
+                <div
+                  className={`absolute top-2 pointer-events-none p-3 rounded-xl border shadow-xl text-xs z-30 transition-all ${
+                    isDark ? 'bg-slate-950/95 border-slate-800 text-slate-100 backdrop-blur-md' : 'bg-white/95 border-slate-200 text-slate-900 backdrop-blur-md'
+                  }`}
+                  style={{
+                    left: `${Math.min(Math.max(8, (hoveredDayData.x / width) * 100), 74)}%`
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-3 font-semibold pb-1.5 mb-1.5 border-b border-slate-800/40">
+                    <span className="text-amber-500 font-medium">Day {hoveredDayData.day}</span>
+                    <span className="font-mono font-bold text-emerald-400">{formatCurrency(hoveredDayData.baseCash)}</span>
+                  </div>
+                  <div className="space-y-1 text-[11px]">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Worst Case:</span>
+                      <span className="font-mono text-amber-500">{formatCurrency(hoveredDayData.worstCash)}</span>
+                    </div>
+                    {(simClientDelay > 0 || simNewHireSalary > 0) && (
+                      <div className="flex justify-between gap-4 font-semibold">
+                        <span className="text-amber-400">Simulated:</span>
+                        <span className="font-mono text-amber-400">{formatCurrency(hoveredDayData.simCash)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between gap-4 pt-1 border-t border-slate-800/40 text-slate-400">
+                      <span>Day Inflow:</span>
+                      <span className="font-mono text-emerald-400">+{formatCurrency(hoveredDayData.inflow)}</span>
+                    </div>
+                    <div className="flex justify-between gap-4 text-slate-400">
+                      <span>Day Outflow:</span>
+                      <span className="font-mono text-rose-400">-{formatCurrency(hoveredDayData.outflow)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const renderWorkflowStepperFooter = () => {
+        const prevTabObj = currentTabIndex > 0 ? NAVIGATION_TABS[currentTabIndex - 1] : null;
+        const nextTabObj = currentTabIndex < NAVIGATION_TABS.length - 1 ? NAVIGATION_TABS[currentTabIndex + 1] : null;
+
+        return (
+          <div className={`mt-8 p-3.5 sm:p-4 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-3 transition-all ${
+            isDark ? 'bg-slate-900/40 border-slate-800/80' : 'bg-white border-slate-200/80'
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Step {currentTabIndex + 1} of {NAVIGATION_TABS.length}:
+              </span>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                isDark ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-800'
+              }`}>
+                {NAVIGATION_TABS[currentTabIndex].label}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+              {prevTabObj ? (
+                <button
+                  onClick={handlePrevTab}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                    isDark
+                      ? 'bg-slate-950/80 text-slate-300 border-slate-800 hover:text-white hover:border-slate-700'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Back: {prevTabObj.label}</span>
+                </button>
+              ) : (
+                <div />
+              )}
+
+              {nextTabObj && (
+                <button
+                  onClick={handleNextTab}
+                  className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>Next: {nextTabObj.label}</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <div className={`min-h-screen font-sans transition-colors duration-200 pb-20 select-text ${
+          isDark
+            ? 'bg-[#090e0c] text-slate-200 selection:bg-amber-400 selection:text-slate-950'
+            : 'bg-[#f8faf9] text-slate-800 selection:bg-amber-300 selection:text-slate-900'
+        }`}>
+          {/* Toast Notification Banner */}
+          {toastMessage && (
+            <div className="fixed bottom-5 right-5 z-50">
+              <div className={`p-3.5 rounded-xl border shadow-xl flex items-center gap-3 backdrop-blur-md ${
+                isDark ? 'bg-slate-900/95 border-slate-800 text-white' : 'bg-white/95 border-slate-200 text-slate-900'
+              }`}>
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <div>
+                  <p className="font-semibold text-xs">{toastMessage.title}</p>
+                  <p className="text-[11px] text-slate-400">{toastMessage.description}</p>
+                </div>
+                <button onClick={() => setToastMessage(null)} className="ml-2 text-slate-400 hover:text-white">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Top Header Bar */}
+          <header className={`sticky top-0 z-40 backdrop-blur-md border-b transition-colors ${
+            isDark
+              ? 'bg-[#090e0c]/90 border-slate-800/80'
+              : 'bg-white/90 border-slate-200/90'
+          }`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-400 to-emerald-500 p-0.5 shadow-sm">
+                  <div className={`w-full h-full rounded-[6px] flex items-center justify-center ${isDark ? 'bg-[#090e0c]' : 'bg-white'}`}>
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className={`text-sm sm:text-base font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      CashFlow <span className="text-amber-500">Copilot</span>
+                    </h1>
+                    <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${
+                      isDark
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}>
+                      Live Engine
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className={`hidden sm:flex items-center gap-1.5 border rounded-lg px-2 py-1 ${
+                  isDark ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-100/80 border-slate-200'
+                }`}>
+                  <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preset:</span>
+                  <select
+                    value={selectedPresetKey}
+                    onChange={(e) => handleLoadPreset(e.target.value)}
+                    className={`bg-transparent text-xs font-medium focus:outline-none cursor-pointer ${
+                      isDark ? 'text-slate-200' : 'text-slate-800'
+                    }`}
+                  >
+                    <option value="agencyCrunch" className={isDark ? 'bg-slate-900' : 'bg-white'}>Tech Agency (Payroll Crunch)</option>
+                    <option value="retailCrunch" className={isDark ? 'bg-slate-900' : 'bg-white'}>B2B Wholesale (EMI & GST Pinch)</option>
+                    <option value="saasGrowth" className={isDark ? 'bg-slate-900' : 'bg-white'}>SaaS Studio (Healthy Cushion)</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={handleRefreshWorkspace}
+                  className={`p-2 rounded-lg border text-xs transition-all flex items-center gap-1.5 ${
+                    isDark
+                      ? 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'
+                  }`}
+                  title="Reset forecast and scenario parameters"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-amber-500 transition-transform ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden lg:inline text-xs font-medium">Reset</span>
+                </button>
+
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm"
+                  title="Upload CSV"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Import CSV</span>
+                </button>
+
+                <button
+                  onClick={handleExportCSV}
+                  className={`p-2 rounded-lg border text-xs transition-all ${
+                    isDark ? 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                  }`}
+                  title="Export Ledger to CSV"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={() => window.print()}
+                  className={`p-2 rounded-lg border text-xs transition-all ${
+                    isDark ? 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                  }`}
+                  title="Print Summary"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    const next = !isDark;
+                    setIsDark(next);
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('cashflow_theme', next ? 'dark' : 'light');
+                    }
+                  }}
+                  className={`p-2 rounded-lg border flex items-center justify-center transition-all ${
+                    isDark
+                      ? 'bg-slate-900/80 hover:bg-slate-800 text-amber-400 border-slate-800'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'
+                  }`}
+                  title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                >
+                  {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 space-y-5">
+            {/* Dynamic Alert Banner */}
+            {crunchDay ? (
+              <div className={`rounded-xl p-4 sm:p-5 border transition-all ${
+                isDark
+                  ? 'bg-slate-900/80 border-amber-500/30 text-white'
+                  : 'bg-amber-50/70 border-amber-200 text-slate-900'
+              }`}>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-start space-x-3">
+                    <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${
+                      isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      <AlertTriangle className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-amber-500 uppercase tracking-wider">
+                          Deficit Risk Detected
+                        </span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium ${
+                          isDark ? 'bg-slate-800 text-slate-300' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          Day {crunchDay}
+                        </span>
+                      </div>
+                      <h2 className="text-sm sm:text-base font-bold mt-0.5">
+                        Balance dips to {formatCurrency(lowestExpectedCash)} in {crunchDay} days.
+                      </h2>
+                      <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        Fixed commitments precede scheduled receivables. Review diagnostics or negotiate terms to stabilize runway.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex sm:flex-row flex-col items-center gap-2 shrink-0 w-full md:w-auto">
+                    <button
+                      onClick={() => setActiveTab('simulator')}
+                      className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ${
+                        isDark
+                          ? 'bg-slate-950/60 hover:bg-slate-800 text-slate-300 border-slate-700'
+                          : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      <Sliders className="w-3.5 h-3.5 text-amber-500" />
+                      Simulate
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('actions')}
+                      className="w-full sm:w-auto px-3.5 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                      Resolve Deficit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className={`rounded-xl p-3.5 sm:p-4 border flex items-center justify-between transition-all ${
+                isDark
+                  ? 'bg-slate-900/60 border-emerald-950 text-slate-200'
+                  : 'bg-emerald-50/60 border-emerald-200 text-slate-900'
+              }`}>
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-lg ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
+                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-xs sm:text-sm">Safe Operating Cushion</h4>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Net balances remain solvent across the entire {horizonDays}-day timeline.
+                    </p>
+                  </div>
+                </div>
+                <span className={`text-xs font-mono font-medium px-2.5 py-1 rounded-md ${
+                  isDark ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-100 text-emerald-800'
+                }`}>
+                  Min: {formatCurrency(lowestExpectedCash)}
+                </span>
+              </div>
+            )}
+
+            {/* 4 Clean Metric Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {/* Card 1: Liquid Bank */}
+              <div
+                onClick={() => setActiveTab('ledger')}
+                className={`border rounded-xl p-4 transition-all shadow-sm cursor-pointer group ${
+                  isDark
+                    ? 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
+                    : 'bg-white border-slate-200/80 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Liquid Cash
+                  </span>
+                  <div className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-800 text-emerald-400' : 'bg-slate-100 text-slate-700'}`}>
+                    <DollarSign className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className={`text-xl font-bold font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {formatCurrency(currentCash)}
+                  </span>
+                </div>
+                <div className={`mt-2 flex items-center justify-between text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <span>Current balance</span>
+                  <span className="text-amber-500 text-[11px] font-medium group-hover:underline flex items-center">
+                    Ledger <ChevronRight className="w-3 h-3 ml-0.5" />
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 2: Projected Runway */}
+              <div
+                onClick={() => setActiveTab('diagnostics')}
+                className={`border rounded-xl p-4 transition-all shadow-sm cursor-pointer group ${
+                  isDark
+                    ? 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
+                    : 'bg-white border-slate-200/80 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Runway
+                  </span>
+                  <div className={`p-1.5 rounded-lg ${
+                    crunchDay
+                      ? isDark ? 'bg-amber-400/10 text-amber-400' : 'bg-amber-100 text-amber-800'
+                      : isDark ? 'bg-slate-800 text-emerald-400' : 'bg-slate-100 text-slate-700'
+                  }`}>
+                    <Clock className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className={`text-xl font-bold font-mono ${
+                    crunchDay
+                      ? 'text-amber-500'
+                      : isDark ? 'text-emerald-400' : 'text-emerald-600'
+                  }`}>
+                    {typeof projectedRunwayDays === 'number' ? `${projectedRunwayDays} Days` : projectedRunwayDays}
+                  </span>
+                </div>
+                <div className={`mt-2 flex items-center justify-between text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <span>{crunchDay ? 'Breach predicted' : 'Stable trajectory'}</span>
+                  <span className="text-amber-500 text-[11px] font-medium group-hover:underline flex items-center">
+                    Diagnose <ChevronRight className="w-3 h-3 ml-0.5" />
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 3: Incoming Pipeline */}
+              <div
+                onClick={() => setActiveTab('ledger')}
+                className={`border rounded-xl p-4 transition-all shadow-sm cursor-pointer group ${
+                  isDark
+                    ? 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
+                    : 'bg-white border-slate-200/80 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Inflows ({horizonDays}d)
+                  </span>
+                  <div className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-800 text-emerald-400' : 'bg-slate-100 text-emerald-700'}`}>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className={`text-xl font-bold font-mono ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    {formatCurrency(totalUpcomingInflow)}
+                  </span>
+                </div>
+                <div className={`mt-2 flex items-center justify-between text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <span>{invoices.filter(i => i.status !== 'paid').length} receivables</span>
+                  <span className="text-amber-500 text-[11px] font-medium group-hover:underline flex items-center">
+                    View <ChevronRight className="w-3 h-3 ml-0.5" />
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 4: Scheduled Liabilities */}
+              <div
+                onClick={() => setActiveTab('vendorHub')}
+                className={`border rounded-xl p-4 transition-all shadow-sm cursor-pointer group ${
+                  isDark
+                    ? 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
+                    : 'bg-white border-slate-200/80 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Outflows ({horizonDays}d)
+                  </span>
+                  <div className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-800 text-amber-400' : 'bg-slate-100 text-amber-700'}`}>
+                    <ArrowDownRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className={`text-xl font-bold font-mono ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                    {formatCurrency(totalUpcomingOutflow)}
+                  </span>
+                </div>
+                <div className={`mt-2 flex items-center justify-between text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <span>{expenses.length} commitments</span>
+                  <span className="text-amber-500 text-[11px] font-medium group-hover:underline flex items-center">
+                    Manage <ChevronRight className="w-3 h-3 ml-0.5" />
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className={`border rounded-xl p-1.5 shadow-sm transition-all ${
+              isDark ? 'bg-slate-900/50 border-slate-800/80' : 'bg-white border-slate-200/90'
+            }`}>
+              <div className="flex items-center justify-between gap-1 sm:gap-2">
+                <button
+                  onClick={handlePrevTab}
+                  disabled={currentTabIndex === 0}
+                  className={`p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1 transition-all ${
+                    currentTabIndex === 0
+                      ? 'opacity-30 cursor-not-allowed border-transparent text-slate-500'
+                      : isDark
+                      ? 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                  }`}
+                  title="Previous Step (←)"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Prev</span>
+                </button>
+
+                <div className="flex items-center space-x-1 overflow-x-auto py-0.5 flex-1 no-scrollbar justify-start sm:justify-center">
+                  {NAVIGATION_TABS.map((tab, idx) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    const isPast = currentTabIndex > idx;
+
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 whitespace-nowrap ${
+                          isActive
+                            ? 'bg-amber-400 text-slate-950 font-semibold shadow-sm'
+                            : isPast
+                            ? isDark
+                              ? 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                            : isDark
+                            ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                          isActive
+                            ? 'bg-slate-950 text-amber-400'
+                            : isPast
+                            ? isDark ? 'bg-emerald-950 text-emerald-400' : 'bg-emerald-100 text-emerald-800'
+                            : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'
+                        }`}>
+                          {isPast ? <Check className="w-2.5 h-2.5" /> : tab.stepNumber}
+                        </div>
+                        <span>{tab.label}</span>
+                        <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={handleNextTab}
+                  disabled={currentTabIndex === NAVIGATION_TABS.length - 1}
+                  className={`p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1 transition-all ${
+                    currentTabIndex === NAVIGATION_TABS.length - 1
+                      ? 'opacity-30 cursor-not-allowed border-transparent text-slate-500'
+                      : isDark
+                      ? 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                  }`}
+                  title="Next Step (→)"
+                >
+                  <span className="hidden md:inline">Next</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {activeTab === 'dashboard' && (
+              <div className="space-y-5">
+                {renderChart()}
+
+                {/* Quick NLP Ask Sandbox */}
+                <div className={`border rounded-xl p-4 shadow-sm ${
+                  isDark ? 'bg-slate-900/50 border-slate-800/80' : 'bg-white border-slate-200/90'
+                }`}>
+                  <form onSubmit={handleNaturalLanguageSimulation} className="flex flex-col sm:flex-row items-center gap-2.5">
+                    <div className="relative flex-1 w-full">
+                      <input
+                        type="text"
+                        value={nlpPrompt}
+                        onChange={(e) => setNlpPrompt(e.target.value)}
+                        placeholder="Ask scenario: 'Can I hire 2 engineers at $4k each?' or 'What if Acme pays 20 days late?'"
+                        className={`w-full text-xs sm:text-sm pl-9 pr-3 py-2.5 rounded-lg border focus:outline-none transition-all ${
+                          isDark
+                            ? 'bg-slate-950/80 border-slate-800 text-white placeholder:text-slate-500 focus:border-amber-400'
+                            : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-400'
+                        }`}
+                      />
+                      <Sparkles className="w-4 h-4 text-amber-400 absolute left-3 top-3" />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                      Simulate
+                    </button>
+                  </form>
+
+                  {nlpFeedback && (
+                    <div className={`mt-2.5 p-3 rounded-lg border text-xs flex items-start gap-2 ${
+                      isDark ? 'bg-slate-950/60 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-800'
+                    }`}>
+                      <CheckCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-amber-500">Scenario Applied: </span>
+                        <span>{nlpFeedback.rules.join(' · ')}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Diagnostics & AI Action Remediation */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                  <div className={`lg:col-span-2 border rounded-xl p-5 shadow-sm ${
+                    isDark ? 'bg-slate-900/50 border-slate-800/80' : 'bg-white border-slate-200/90'
+                  }`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                        <h3 className={`font-semibold text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          Liquidity Diagnostics
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('diagnostics')}
+                        className="text-xs font-medium text-amber-500 hover:text-amber-400 flex items-center gap-1"
+                      >
+                        Deep Dive <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {crunchExplanation.causes.map((cause, idx) => (
+                        <div key={idx} className={`flex items-start gap-2.5 p-3 rounded-lg border ${
+                          isDark ? 'bg-slate-950/40 border-slate-800/60' : 'bg-slate-50/70 border-slate-200/80'
+                        }`}>
+                          <div className="w-4 h-4 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                            {idx + 1}
+                          </div>
+                          <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                            {cause}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick AI Prescriptions */}
+                  <div className={`border rounded-xl p-5 shadow-sm flex flex-col justify-between ${
+                    isDark ? 'bg-slate-900/50 border-slate-800/80' : 'bg-white border-slate-200/90'
+                  }`}>
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap className="w-4 h-4 text-amber-500" />
+                        <h4 className={`font-semibold text-sm ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          Remediation Actions
+                        </h4>
+                      </div>
+                      <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        Simulate one-click interventions to recover deficit:
+                      </p>
+
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => setActiveTab('vendorHub')}
+                          className={`w-full p-2.5 rounded-lg text-left border text-xs font-medium flex items-center justify-between transition-all ${
+                            isDark ? 'bg-slate-950/80 hover:bg-slate-900 text-slate-200 border-slate-800' : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Handshake className="w-3.5 h-3.5 text-amber-500" />
+                            Negotiate Vendor Payable
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                        </button>
+
+                        <button
+                          onClick={() => setActiveTab('actions')}
+                          className={`w-full p-2.5 rounded-lg text-left border text-xs font-medium flex items-center justify-between transition-all ${
+                            isDark ? 'bg-slate-950/80 hover:bg-slate-900 text-slate-200 border-slate-800' : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Send className="w-3.5 h-3.5 text-emerald-400" />
+                            Chase Overdue Invoices
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setActiveTab('actions')}
+                      className="mt-4 w-full py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <span>All Remediation Options</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {renderWorkflowStepperFooter()}
+              </div>
+            )}
+
+            {activeTab === 'diagnostics' && (
+              <div className="space-y-6">
+                <div className={`border rounded-2xl p-6 shadow-sm ${
+                  isDark ? 'bg-slate-900/90 border-emerald-900/50' : 'bg-white border-emerald-200/80'
+                }`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`p-3 rounded-2xl border ${
+                      isDark ? 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30' : 'bg-amber-100 text-amber-800 border-amber-300'
+                    }`}>
+                      <BarChart3 className="w-6 h-6 text-yellow-500" />
+                    </div>
+                    <div>
+                      <h3 className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        Root-Cause Diagnostic Center
+                      </h3>
+                      <p className={`text-xs ${isDark ? 'text-emerald-400/80' : 'text-emerald-700'}`}>
+                        Algorithmic breakdown of structural liabilities, receivables timing, and concentration risk.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div className={`p-4 rounded-xl border flex flex-col justify-between ${
+                      isDark ? 'bg-slate-950/70 border-emerald-900/50' : 'bg-slate-50 border-emerald-200'
+                    }`}>
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                          Primary Deficit Window
+                        </span>
+                        <span className={`text-xl font-mono font-bold ${crunchDay ? 'text-rose-500' : 'text-emerald-400'}`}>
+                          {crunchDay ? `Days ${Math.max(1, crunchDay - 5)} – ${crunchDay + 5}` : 'No Deficit Window'}
+                        </span>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Point of highest divergence between statutory outlays and customer remittances.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('simulator')}
+                        className="mt-3 flex items-center gap-1 text-xs font-bold text-yellow-500 hover:text-yellow-400 group"
+                      >
+                        <span>Simulate Fixes in Sandbox</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+
+                    <div className={`p-4 rounded-xl border flex flex-col justify-between ${
+                      isDark ? 'bg-slate-950/70 border-emerald-900/50' : 'bg-slate-50 border-emerald-200'
+                    }`}>
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                          Receivables Aging Factor
+                        </span>
+                        <span className={`text-xl font-mono font-bold ${isDark ? 'text-yellow-400' : 'text-amber-700'}`}>
+                          {invoices.filter(i => i.confidence !== 'high').length} At-Risk Invoices
+                        </span>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Client invoices with medium or low clearance certainty.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('actions')}
+                        className="mt-3 flex items-center gap-1 text-xs font-bold text-yellow-500 hover:text-yellow-400 group"
+                      >
+                        <span>Execute Inflows in Actions</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+
+                    <div className={`p-4 rounded-xl border flex flex-col justify-between ${
+                      isDark ? 'bg-slate-950/70 border-emerald-900/50' : 'bg-slate-50 border-emerald-200'
+                    }`}>
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                          Fixed Non-Negotiable Burden
+                        </span>
+                        <span className={`text-xl font-mono font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          {formatCurrency(expenses.filter(e => e.essential).reduce((acc, c) => acc + c.amount, 0))} / mo
+                        </span>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Core payroll, tax liabilities, and statutory leases.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('vendorHub')}
+                        className="mt-3 flex items-center gap-1 text-xs font-bold text-yellow-500 hover:text-yellow-400 group"
+                      >
+                        <span>Restructure in Vendor Hub</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-5 border-t border-emerald-900/30">
+                    <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Key Contributing Drivers
+                    </h4>
+                    <div className="space-y-3">
+                      {crunchExplanation.causes.map((item, i) => (
+                        <div key={i} className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+                          isDark ? 'bg-slate-950/60 border-emerald-900/40' : 'bg-slate-50 border-emerald-200'
+                        }`}>
+                          <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
+                          <span className="text-xs sm:text-sm">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {renderWorkflowStepperFooter()}
+              </div>
+            )}
+
+            {activeTab === 'simulator' && (
+              <div className="space-y-6">
+                <div className={`border rounded-2xl p-6 shadow-sm ${
+                  isDark ? 'bg-slate-900/90 border-emerald-900/50' : 'bg-white border-emerald-200/80'
+                }`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                      <h3 className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        Quantitative "What-If?" Sandbox
+                      </h3>
+                      <p className={`text-xs ${isDark ? 'text-emerald-400/80' : 'text-emerald-700'}`}>
+                        Adjust variables in real-time to preview runway changes before making commitments.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSimClientDelay(0);
+                        setSimNewHireSalary(0);
+                        setSimHireHeadcount(1);
+                        setSimVendorDelayDays(0);
+                        setSimRevenueShock(0);
+                        setSimCapExDelay(false);
+                        showToast('Simulator Reset', 'All what-if scenario levers returned to baseline.');
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                        isDark ? 'bg-slate-950 text-slate-300 border-emerald-900 hover:border-yellow-400' : 'bg-slate-100 text-slate-700 border-emerald-200'
+                      }`}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Reset Levers
+                    </button>
+                  </div>
+
+                  {/* Sliders Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className={`p-4 rounded-xl border space-y-2.5 ${
+                      isDark ? 'bg-slate-950/80 border-emerald-900/50' : 'bg-slate-50 border-emerald-200'
+                    }`}>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-yellow-500" /> Client Delay Slippage:
+                        </span>
+                        <span className="font-mono font-bold text-yellow-400">+{simClientDelay} Days</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="45"
+                        step="1"
+                        value={simClientDelay}
+                        onChange={(e) => setSimClientDelay(Number(e.target.value))}
+                        className="w-full accent-yellow-500 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[11px] text-slate-400">
+                        <span>Target: {invoices[0]?.client || 'Key Client'}</span>
+                        <span>0 to +45 days late</span>
+                      </div>
+                    </div>
+
+                    <div className={`p-4 rounded-xl border space-y-2.5 ${
+                      isDark ? 'bg-slate-950/80 border-emerald-900/50' : 'bg-slate-50 border-emerald-200'
+                    }`}>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold flex items-center gap-1.5">
+                          <UserPlus className="w-3.5 h-3.5 text-emerald-400" /> New Hire Monthly Expense:
+                        </span>
+                        <span className="font-mono font-bold text-emerald-400">
+                          {formatCurrency(simNewHireSalary * simHireHeadcount)}/mo ({simHireHeadcount} FTE)
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="15000"
+                        step="500"
+                        value={simNewHireSalary}
+                        onChange={(e) => setSimNewHireSalary(Number(e.target.value))}
+                        className="w-full accent-emerald-500 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[11px] text-slate-400">
+                        <span>Headcount: 1</span>
+                        <span>Up to $15k / month additional burn</span>
+                      </div>
+                    </div>
+
+                    <div className={`p-4 rounded-xl border space-y-2.5 ${
+                      isDark ? 'bg-slate-950/80 border-emerald-900/50' : 'bg-slate-50 border-emerald-200'
+                    }`}>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold flex items-center gap-1.5">
+                          <Handshake className="w-3.5 h-3.5 text-yellow-500" /> Vendor Payment Grace:
+                        </span>
+                        <span className="font-mono font-bold text-yellow-400">+{simVendorDelayDays} Days</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="40"
+                        step="2"
+                        value={simVendorDelayDays}
+                        onChange={(e) => setSimVendorDelayDays(Number(e.target.value))}
+                        className="w-full accent-yellow-500 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[11px] text-slate-400">
+                        <span>Postpone accounts payable</span>
+                        <span>0 to 40 days</span>
+                      </div>
+                    </div>
+
+                    <div className={`p-4 rounded-xl border space-y-2.5 ${
+                      isDark ? 'bg-slate-950/80 border-emerald-900/50' : 'bg-slate-50 border-emerald-200'
+                    }`}>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold flex items-center gap-1.5">
+                          <TrendingDown className="w-3.5 h-3.5 text-rose-500" /> Revenue Shock (% Drop):
+                        </span>
+                        <span className="font-mono font-bold text-rose-500">-{simRevenueShock}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="50"
+                        step="5"
+                        value={simRevenueShock}
+                        onChange={(e) => setSimRevenueShock(Number(e.target.value))}
+                        className="w-full accent-rose-500 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[11px] text-slate-400">
+                        <span>Contracts discount / shrinkage</span>
+                        <span>0 to 50%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`mt-6 p-4 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 ${
+                    simulatedLowestCash < 0
+                      ? isDark ? 'bg-rose-950/40 border-rose-900/60' : 'bg-rose-50 border-rose-200'
+                      : isDark ? 'bg-emerald-950/40 border-emerald-900/60' : 'bg-emerald-50 border-emerald-200'
+                  }`}>
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Simulation Outcome
+                      </span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-xl font-bold font-mono ${simulatedLowestCash < 0 ? 'text-rose-500' : 'text-emerald-400'}`}>
+                          Lowest Point: {formatCurrency(simulatedLowestCash)}
+                        </span>
+                        {simulatedCrunchDay && (
+                          <span className="text-xs font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                            Crunch Day {simulatedCrunchDay}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold border ${
+                        simulatedLowestCash < 0
+                          ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      }`}>
+                        {simulatedLowestCash < 0 ? '⚠️ High Risk: Action Required' : '✓ Safe Financial Trajectory'}
+                      </span>
+                      <button
+                        onClick={() => setActiveTab('actions')}
+                        className="px-3 py-1.5 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-sm"
+                      >
+                        <span>Fix In Actions</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {renderWorkflowStepperFooter()}
+              </div>
+            )}
+
+            {activeTab === 'vendorHub' && (
+              <div className="space-y-6">
+                <div className={`border rounded-2xl p-6 shadow-sm ${
+                  isDark ? 'bg-slate-900/90 border-emerald-900/50' : 'bg-white border-emerald-200/80'
+                }`}>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className={`p-3 rounded-2xl border shrink-0 ${
+                        isDark ? 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30' : 'bg-amber-100 text-amber-800 border-amber-300'
+                      }`}>
+                        <Handshake className="w-6 h-6 text-yellow-500" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            Vendor Negotiation Workspace
+                          </h3>
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${
+                            isDark ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          }`}>
+                            Working Capital Defense
+                          </span>
+                        </div>
+                        <p className={`text-xs sm:text-sm mt-1 leading-relaxed ${isDark ? 'text-emerald-400/80' : 'text-emerald-700'}`}>
+                          Proactively negotiate payment terms with suppliers, landlords, and cloud vendors before deficits occur.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setCounterOfferMode(!counterOfferMode)}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
+                          counterOfferMode
+                            ? 'bg-yellow-400 text-slate-950 border-yellow-300 shadow-md font-bold'
+                            : isDark ? 'bg-slate-950 text-slate-300 border-emerald-900/70 hover:border-yellow-400/40' : 'bg-slate-100 text-slate-700 border-emerald-200'
+                        }`}
+                      >
+                        <Sliders className="w-3.5 h-3.5" />
+                        {counterOfferMode ? 'Simulating Counter-Offer' : 'Simulate Counter-Offer'}
+                      </button>
+
+                      <button
+                        onClick={handleCommitVendorNegotiationToForecast}
+                        className="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs font-black shadow-md shadow-yellow-400/25 transition-all flex items-center gap-2"
+                      >
+                        <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                        Commit Deal to Forecast
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 pt-4 border-t border-emerald-900/30">
+                    <label className={`text-xs font-bold uppercase tracking-wider block mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Select Payable Obligation to Negotiate:
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {expenses.map((exp) => {
+                        const isSelected = exp.id === selectedVendorExpenseId;
+                        return (
+                          <button
+                            key={exp.id}
+                            onClick={() => setSelectedVendorExpenseId(exp.id)}
+                            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
+                              isSelected
+                                ? isDark
+                                  ? 'bg-yellow-400 text-slate-950 border-yellow-300 shadow-md'
+                                  : 'bg-yellow-400 text-slate-950 border-amber-400 shadow-sm'
+                                : isDark
+                                  ? 'bg-slate-950/80 text-slate-300 border-emerald-900/60 hover:border-emerald-500/40'
+                                  : 'bg-slate-50 text-slate-700 border-emerald-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span>{exp.title}</span>
+                            <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded ${
+                              isSelected
+                                ? 'bg-slate-950/20 text-slate-950'
+                                : isDark ? 'bg-emerald-950 text-emerald-300' : 'bg-emerald-100 text-emerald-800'
+                            }`}>
+                              {formatCurrency(exp.amount)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className={`lg:col-span-2 border rounded-2xl p-6 space-y-5 shadow-sm ${
+                    isDark ? 'bg-slate-900/90 border-emerald-900/50' : 'bg-white border-emerald-200/80'
+                  }`}>
+                    <div>
+                      <h4 className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                        <Split className="w-4 h-4 text-yellow-500" />
+                        1. Select Negotiation Playbook & Terms
+                      </h4>
+                      <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        Choose the restructuring method to align obligations with customer cash receivables.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { id: 'split_tranches', title: 'Multi-Part Tranches', desc: 'Split invoice into 2 or 3 installments across 45 days.', icon: Split },
+                        { id: 'grace_extension', title: 'Net-30/45 Day Grace', desc: 'Defer payment date past major client receivable maturity.', icon: CalendarClock },
+                        { id: 'partial_advance', title: '25% Advance + Balloon', desc: 'Pay 25% today in good faith, remainder in month 2.', icon: Percent },
+                        { id: 'tier_downgrade', title: 'Scope / Tier Downgrade', desc: 'Reduce service utilization to cut recurring cost by 40%.', icon: TrendingDown }
+                      ].map((strat) => {
+                        const Icon = strat.icon;
+                        const isPicked = negotiationStrategy === strat.id && !counterOfferMode;
+                        return (
+                          <div
+                            key={strat.id}
+                            onClick={() => {
+                              setNegotiationStrategy(strat.id);
+                              setCounterOfferMode(false);
+                            }}
+                            className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                              isPicked
+                                ? isDark
+                                  ? 'bg-yellow-400/10 border-yellow-400 text-yellow-300 ring-1 ring-yellow-400/50'
+                                  : 'bg-amber-50 border-amber-400 text-amber-950 ring-1 ring-amber-400'
+                                : isDark
+                                  ? 'bg-slate-950/60 border-emerald-900/40 text-slate-300 hover:border-emerald-700/60'
+                                  : 'bg-slate-50 border-emerald-100 text-slate-700 hover:border-emerald-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-4 h-4 text-yellow-500 shrink-0" />
+                              <span className="font-bold text-xs sm:text-sm">{strat.title}</span>
+                            </div>
+                            <p className={`text-[11px] mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {strat.desc}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className={`p-4 rounded-xl border space-y-4 ${
+                      isDark ? 'bg-slate-950/80 border-emerald-900/50' : 'bg-emerald-50/40 border-emerald-200'
+                    }`}>
+                      {counterOfferMode ? (
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-bold text-yellow-500 flex items-center gap-1.5">
+                              <Sliders className="w-3.5 h-3.5" /> Vendor Demanded Upfront % (Counter-Offer Sandbox)
+                            </span>
+                            <span className="font-mono font-bold text-sm text-yellow-400">{counterOfferUpfrontPct}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="30"
+                            max="70"
+                            step="5"
+                            value={counterOfferUpfrontPct}
+                            onChange={(e) => setCounterOfferUpfrontPct(Number(e.target.value))}
+                            className="w-full accent-yellow-500 cursor-pointer"
+                          />
+                          <p className="text-[11px] text-slate-400">
+                            Tests if vendor refuses full deferral and insists on {counterOfferUpfrontPct}% advance upfront.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {negotiationStrategy === 'split_tranches' && (
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-slate-200">Number of Installments:</span>
+                                <div className="flex gap-2">
+                                  {[2, 3].map(cnt => (
+                                    <button
+                                      key={cnt}
+                                      onClick={() => setNegoTranchesCount(cnt)}
+                                      className={`px-3 py-1 rounded-lg text-xs font-bold border ${
+                                        negoTranchesCount === cnt
+                                          ? isDark ? 'bg-yellow-400 text-slate-950 border-yellow-300' : 'bg-yellow-400 text-slate-900 border-amber-400'
+                                          : isDark ? 'border-emerald-900 text-slate-400' : 'border-slate-300 text-slate-600'
+                                      }`}
+                                    >
+                                      {cnt} Tranches
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {negoTranchesCount === 3 && (
+                                <div>
+                                  <div className="flex justify-between text-xs mb-1">
+                                    <span>Initial Tranche % (Day 1):</span>
+                                    <span className="font-mono font-bold text-yellow-400">{negoUpfrontPct}%</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="20"
+                                    max="50"
+                                    step="5"
+                                    value={negoUpfrontPct}
+                                    onChange={(e) => setNegoUpfrontPct(Number(e.target.value))}
+                                    className="w-full accent-yellow-500 cursor-pointer"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {negotiationStrategy === 'grace_extension' && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-xs">
+                                <span className="font-bold">Requested Deferral Days:</span>
+                                <span className="font-mono font-bold text-yellow-400">+{negoExtensionDays} Days</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="10"
+                                max="45"
+                                step="5"
+                                value={negoExtensionDays}
+                                onChange={(e) => setNegoExtensionDays(Number(e.target.value))}
+                                className="w-full accent-yellow-500 cursor-pointer"
+                              />
+                              <p className="text-[11px] text-slate-400">
+                                Shifts payment from Day {activeNegotiationExpense.dueDayOfInterval[0] || 15} to Day {((activeNegotiationExpense.dueDayOfInterval[0] || 15) + negoExtensionDays)}.
+                              </p>
+                            </div>
+                          )}
+
+                          {negotiationStrategy === 'partial_advance' && (
+                            <div className="text-xs space-y-1">
+                              <p className="font-bold text-emerald-400">25% Goodwill Cash Wire + 75% Extended Balloon</p>
+                              <p className="text-slate-400">
+                                Frees up {formatCurrency(Math.round(activeNegotiationExpense.amount * 0.75))} for payroll during the impending cash crunch.
+                              </p>
+                            </div>
+                          )}
+
+                          {negotiationStrategy === 'tier_downgrade' && (
+                            <div className="text-xs space-y-1">
+                              <p className="font-bold text-emerald-400">40% Immediate Expenditure Contraction</p>
+                              <p className="text-slate-400">
+                                Permanently preserves {formatCurrency(Math.round(activeNegotiationExpense.amount * 0.4))} every billing cycle.
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    <div>
+                      <h5 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        New Proposed Disbursement Schedule:
+                      </h5>
+                      <div className="space-y-2">
+                        {negotiationCalculations.proposedNewOutflows.map((item, idx) => (
+                          <div key={idx} className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+                            isDark ? 'bg-slate-950/70 border-emerald-900/40' : 'bg-slate-50 border-emerald-100'
+                          }`}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-yellow-400/20 text-yellow-300 flex items-center justify-center font-bold text-[10px]">
+                                {idx + 1}
+                              </div>
+                              <div>
+                                <span className="font-bold text-slate-200">{item.label}</span>
+                                <span className="block text-[10px] text-slate-400">Scheduled on Day {item.day}</span>
+                              </div>
+                            </div>
+                            <span className={`font-mono font-bold text-sm ${isDark ? 'text-yellow-400' : 'text-amber-700'}`}>
+                              {formatCurrency(item.amount)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Column 3: Impact Card */}
+                  <div className={`border rounded-2xl p-6 flex flex-col justify-between shadow-md ${
+                    isDark
+                      ? 'bg-gradient-to-b from-slate-900 via-[#071d15] to-slate-950 border-emerald-500/40'
+                      : 'bg-gradient-to-b from-emerald-50/80 via-white to-amber-50/50 border-emerald-300'
+                  }`}>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-yellow-500" />
+                        <h4 className={`text-xs font-extrabold uppercase tracking-wider ${isDark ? 'text-yellow-400' : 'text-amber-800'}`}>
+                          Working Capital Impact
+                        </h4>
+                      </div>
+
+                      <div className={`p-3.5 rounded-xl border ${isDark ? 'bg-slate-950/70 border-emerald-900/50' : 'bg-white border-emerald-100'}`}>
+                        <span className="text-[11px] text-slate-400 block mb-1">Cash Preserved in Crunch Window</span>
+                        <span className={`text-2xl font-black font-mono ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          +{formatCurrency(negotiationCalculations.cashSavedDuringCrunch)}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">Retained during sensitive payroll cycle</span>
+                      </div>
+
+                      <div className={`p-3.5 rounded-xl border ${isDark ? 'bg-slate-950/70 border-emerald-900/50' : 'bg-white border-emerald-100'}`}>
+                        <span className="text-[11px] text-slate-400 block mb-1">Projected Lowest Balance</span>
+                        <div className="flex items-baseline gap-2">
+                          <span className={`text-xl font-black font-mono ${
+                            negotiationCalculations.projectedMinCash < 0 ? 'text-rose-500' : isDark ? 'text-emerald-400' : 'text-emerald-700'
+                          }`}>
+                            {formatCurrency(negotiationCalculations.projectedMinCash)}
+                          </span>
+                          <span className="text-[10px] text-slate-400 line-through">
+                            {formatCurrency(lowestExpectedCash)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className={`p-3.5 rounded-xl border ${isDark ? 'bg-slate-950/70 border-emerald-900/50' : 'bg-white border-emerald-100'}`}>
+                        <span className="text-[11px] text-slate-400 block mb-1">Runway Buffer Gained</span>
+                        <span className={`text-lg font-black font-mono ${isDark ? 'text-yellow-400' : 'text-amber-700'}`}>
+                          +{negotiationCalculations.runwayExtensionDaysEstimate} Days
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-5 mt-4 border-t border-emerald-900/30">
+                      <button
+                        onClick={handleCommitVendorNegotiationToForecast}
+                        className="w-full py-3 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs font-black shadow-lg shadow-yellow-400/20 transition-all flex items-center justify-center gap-2 hover:scale-[1.01]"
+                      >
+                        <Zap className="w-4 h-4 fill-slate-950" />
+                        Commit Deal to Forecast
+                      </button>
+                      <p className="text-[10px] text-center text-slate-400 mt-2">
+                        Splits the live ledger item and recalculates the trajectory graph immediately.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Multi-Channel Outreach */}
+                <div className={`border rounded-2xl p-6 shadow-sm space-y-4 ${
+                  isDark ? 'bg-slate-900/90 border-emerald-900/50' : 'bg-white border-emerald-200/80'
+                }`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-900/30">
+                    <div>
+                      <h4 className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                        <MessageSquare className="w-4 h-4 text-yellow-500" />
+                        2. AI Outreach Generator & Talking Points
+                      </h4>
+                      <p className={`text-xs mt-0.5 ${isDark ? 'text-emerald-400/80' : 'text-emerald-700'}`}>
+                        Pre-drafted, battle-tested communication ready to send directly to the vendor's billing contact.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-slate-400 font-semibold mr-1">Tone:</span>
+                      {[
+                        { id: 'collaborative', label: 'Collaborative' },
+                        { id: 'firm', label: 'Firm' },
+                        { id: 'restructuring', label: 'Restructure' }
+                      ].map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => setNegoTone(t.id)}
+                          className={`px-2.5 py-1 rounded-lg font-bold border transition-all ${
+                            negoTone === t.id
+                              ? isDark ? 'bg-yellow-400 text-slate-950 border-yellow-300' : 'bg-yellow-400 text-slate-900 border-amber-400'
+                              : isDark ? 'bg-slate-950 text-slate-400 border-emerald-900' : 'bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className={`lg:col-span-2 p-4 rounded-xl border flex flex-col justify-between ${
+                      isDark ? 'bg-slate-950/80 border-emerald-900/40' : 'bg-slate-50 border-emerald-200'
+                    }`}>
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-yellow-500 flex items-center gap-1.5">
+                            <Mail className="w-3.5 h-3.5" /> Email Proposal
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="email"
+                              value={negoContactEmail}
+                              onChange={(e) => setNegoContactEmail(e.target.value)}
+                              className={`text-xs px-2 py-1 rounded border focus:outline-none ${
+                                isDark ? 'bg-slate-900 border-emerald-800 text-white' : 'bg-white border-emerald-200 text-slate-800'
+                              }`}
+                              placeholder="vendor@billing.com"
+                            />
+                          </div>
+                        </div>
+
+                        <div className={`p-3 rounded-lg border text-xs font-mono leading-relaxed whitespace-pre-line max-h-52 overflow-y-auto select-text ${
+                          isDark ? 'bg-slate-900/90 border-emerald-900/60 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+                        }`}>
+                          {negotiationCommunications.body}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-emerald-900/30 flex items-center justify-between">
+                        <button
+                          onClick={() => {
+                            if (navigator.clipboard) {
+                              navigator.clipboard.writeText(negotiationCommunications.body);
+                            } else {
+                              const ta = document.createElement('textarea');
+                              ta.value = negotiationCommunications.body;
+                              document.body.appendChild(ta);
+                              ta.select();
+                              document.execCommand('copy');
+                              document.body.removeChild(ta);
+                            }
+                            setCopiedText(true);
+                            setTimeout(() => setCopiedText(false), 2000);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-all ${
+                            isDark ? 'bg-slate-900 text-yellow-400 border-yellow-400/40 hover:bg-slate-800' : 'bg-white text-amber-800 border-amber-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          {copiedText ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          {copiedText ? 'Copied Email Body' : 'Copy Email Text'}
+                        </button>
+
+                        <a
+                          href={`mailto:${negoContactEmail}?subject=${encodeURIComponent(negotiationCommunications.subject)}&body=${encodeURIComponent(negotiationCommunications.body)}`}
+                          className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" /> Launch Mail Client
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className={`p-4 rounded-xl border ${
+                        isDark ? 'bg-slate-950/80 border-emerald-900/40' : 'bg-slate-50 border-emerald-200'
+                      }`}>
+                        <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 mb-2">
+                          <Send className="w-3.5 h-3.5" /> WhatsApp Message
+                        </span>
+                        <p className={`text-xs p-2.5 rounded border leading-relaxed select-text ${
+                          isDark ? 'bg-slate-900 border-emerald-900/60 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+                        }`}>
+                          {negotiationCommunications.whatsapp}
+                        </p>
+                        <div className="mt-2 flex justify-between items-center">
+                          <a
+                            href={`https://wa.me/?text=${encodeURIComponent(negotiationCommunications.whatsapp)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] font-bold text-yellow-500 hover:underline flex items-center gap-1"
+                          >
+                            Open WhatsApp Web <ArrowRight className="w-3 h-3" />
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className={`p-4 rounded-xl border ${
+                        isDark ? 'bg-slate-950/80 border-emerald-900/40' : 'bg-slate-50 border-emerald-200'
+                      }`}>
+                        <span className="text-xs font-bold text-yellow-400 flex items-center gap-1.5 mb-2">
+                          <PhoneCall className="w-3.5 h-3.5" /> Call Talking Points
+                        </span>
+                        <ul className="space-y-1.5 text-[11px] text-slate-300">
+                          {negotiationCommunications.talkingPoints.map((pt, i) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-yellow-500 font-bold">•</span>
+                              <span>{pt}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {renderWorkflowStepperFooter()}
+              </div>
+            )}
+
+            {activeTab === 'actions' && (
+              <div className="space-y-6">
+                <div className={`border rounded-2xl p-5 shadow-sm ${
+                  isDark ? 'bg-slate-900/90 border-emerald-900/50' : 'bg-white border-emerald-200/80'
+                }`}>
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className={`p-2.5 rounded-xl border ${
+                      isDark ? 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30' : 'bg-amber-100 text-amber-800 border-amber-300'
+                    }`}>
+                      <Zap className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                    </div>
+                    <div>
+                      <h3 className={`font-bold text-base ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                        One-Click AI Remediation Suite
+                      </h3>
+                      <p className={`text-xs font-medium ${isDark ? 'text-emerald-400/80' : 'text-emerald-700'}`}>
+                        Click 'Apply to Forecast' on any recommendation. The cash graph will recalculate in real-time.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Action 1: Chase Invoice */}
+                  <div className={`border rounded-2xl p-5 flex flex-col justify-between transition-all shadow-sm ${
+                    isDark
+                      ? 'bg-slate-900/90 border-emerald-900/50 hover:border-emerald-500/40'
+                      : 'bg-white border-emerald-200/80 hover:border-emerald-400'
+                  }`}>
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
+                          isDark ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                        }`}>
+                          <Send className="w-3.5 h-3.5" /> Rapid Collection
+                        </span>
+                        <span className={`text-xs font-mono font-bold ${isDark ? 'text-yellow-400' : 'text-amber-700'}`}>
+                          Advances $32,000 Inflow
+                        </span>
+                      </div>
+                      <h4 className={`font-bold text-base ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                        Chase Acme Global Corp Invoice
+                      </h4>
+                      <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        Deploy AI reminder email to Sarah Jenkins. Applying to forecast advances expected receipt by 5 days, bridging the Day 15 payroll bottleneck.
+                      </p>
+                    </div>
+
+                    <div className={`mt-5 pt-4 border-t flex items-center justify-between ${isDark ? 'border-emerald-900/50' : 'border-emerald-100'}`}>
+                      <button
+                        onClick={() => setActiveActionModal({ type: 'chase', data: invoices[0] || {} })}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
+                          isDark
+                            ? 'bg-slate-950 hover:bg-slate-800 text-yellow-400 border-yellow-400/40'
+                            : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+                        }`}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" /> View Template
+                      </button>
+
+                      <button
+                        disabled={appliedActions['accelerateAcme']}
+                        onClick={() => {
+                          handleApplyActionExecution(
+                            'accelerateAcme',
+                            () => {
+                              setInvoices(prev => prev.map(inv => (inv.id === 'inv-1' || inv.client.includes('Acme')) ? { ...inv, dueDate: Math.max(3, inv.dueDate - 5), confidence: 'high' } : inv));
+                            },
+                            'Acme Corp invoice receipt advanced by 5 days.'
+                          );
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                          appliedActions['accelerateAcme']
+                            ? isDark ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/60' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-yellow-400 hover:bg-yellow-300 text-slate-950 shadow-md shadow-yellow-400/20'
+                        }`}
+                      >
+                        {appliedActions['accelerateAcme'] ? <Check className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5 fill-slate-950" />}
+                        {appliedActions['accelerateAcme'] ? 'Applied to Curve' : 'Apply to Forecast'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Action 2: Split GST / Vendor Tranches */}
+                  <div className={`border rounded-2xl p-5 flex flex-col justify-between transition-all shadow-sm ${
+                    isDark
+                      ? 'bg-slate-900/90 border-emerald-900/50 hover:border-emerald-500/40'
+                      : 'bg-white border-emerald-200/80 hover:border-emerald-400'
+                  }`}>
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
+                          isDark ? 'bg-yellow-400/10 text-yellow-300 border-yellow-400/30' : 'bg-amber-100 text-amber-800 border-amber-200'
+                        }`}>
+                          <Building className="w-3.5 h-3.5" /> Liability Deferral
+                        </span>
+                        <span className={`text-xs font-mono font-bold ${isDark ? 'text-yellow-400' : 'text-amber-700'}`}>
+                          50/50 Split ($12,400)
+                        </span>
+                      </div>
+                      <h4 className={`font-bold text-base ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                        Negotiate 2-Part Tax / Vendor Tranches
+                      </h4>
+                      <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        Splits quarterly obligation into two tranches (Day 20 & Day 45) to retain working capital through month-end payroll.
+                      </p>
+                    </div>
+
+                    <div className={`mt-5 pt-4 border-t flex items-center justify-between ${isDark ? 'border-emerald-900/50' : 'border-emerald-100'}`}>
+                      <button
+                        onClick={() => setActiveActionModal({ type: 'vendor', data: expenses.find(e => e.category === 'Tax' || e.category === 'Vendor') || expenses[0] })}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
+                          isDark
+                            ? 'bg-slate-950 hover:bg-slate-800 text-yellow-400 border-yellow-400/40'
+                            : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+                        }`}
+                      >
+                        <FileText className="w-3.5 h-3.5" /> View Proposal Script
+                      </button>
+
+                      <button
+                        disabled={appliedActions['splitVendor']}
+                        onClick={() => {
+                          handleApplyActionExecution(
+                            'splitVendor',
+                            () => {
+                              setExpenses(prev => prev.map(e => (e.category === 'Tax' || e.id === 'exp-2') ? { ...e, amount: Math.round(e.amount / 2), dueDayOfInterval: [20, 45] } : e));
+                            },
+                            'Tax/Vendor bill converted into 2 installments.'
+                          );
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                          appliedActions['splitVendor']
+                            ? isDark ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/60' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-yellow-400 hover:bg-yellow-300 text-slate-950 shadow-md shadow-yellow-400/20'
+                        }`}
+                      >
+                        {appliedActions['splitVendor'] ? <Check className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5 fill-slate-950" />}
+                        {appliedActions['splitVendor'] ? 'Tranches Applied' : 'Apply Split to Forecast'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Action 3: Freeze CapEx */}
+                  <div className={`border rounded-2xl p-5 flex flex-col justify-between transition-all shadow-sm ${
+                    isDark
+                      ? 'bg-slate-900/90 border-emerald-900/50 hover:border-emerald-500/40'
+                      : 'bg-white border-emerald-200/80 hover:border-emerald-400'
+                  }`}>
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
+                          isDark ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                        }`}>
+                          <CreditCard className="w-3.5 h-3.5" /> Spend Conservation
+                        </span>
+                        <span className={`text-xs font-mono font-bold ${isDark ? 'text-yellow-400' : 'text-amber-700'}`}>
+                          Saves $8,800
+                        </span>
+                      </div>
+                      <h4 className={`font-bold text-base ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                        Pause Non-Essential Retainers & Hardware CapEx
+                      </h4>
+                      <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        Temporarily cuts marketing agency retainer and workstation equipment orders until receivables clear.
+                      </p>
+                    </div>
+
+                    <div className={`mt-5 pt-4 border-t flex items-center justify-between ${isDark ? 'border-emerald-900/50' : 'border-emerald-100'}`}>
+                      <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Protects core payroll</span>
+                      <button
+                        disabled={appliedActions['pauseCapex']}
+                        onClick={() => {
+                          handleApplyActionExecution(
+                            'pauseCapex',
+                            () => {
+                              setExpenses(prev => prev.filter(e => e.essential));
+                            },
+                            'Discretionary expenses paused for 60 days.'
+                          );
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                          appliedActions['pauseCapex']
+                            ? isDark ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/60' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-yellow-400 hover:bg-yellow-300 text-slate-950 shadow-md shadow-yellow-400/20'
+                        }`}
+                      >
+                        {appliedActions['pauseCapex'] ? <Check className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5 fill-slate-950" />}
+                        {appliedActions['pauseCapex'] ? 'CapEx Paused' : 'Apply to Forecast'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Action 4: Invoice Factoring */}
+                  <div className={`border rounded-2xl p-5 flex flex-col justify-between transition-all shadow-sm ${
+                    isDark
+                      ? 'bg-slate-900/90 border-emerald-900/50 hover:border-emerald-500/40'
+                      : 'bg-white border-emerald-200/80 hover:border-emerald-400'
+                  }`}>
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
+                          isDark ? 'bg-yellow-400/10 text-yellow-300 border-yellow-400/30' : 'bg-amber-100 text-amber-800 border-amber-200'
+                        }`}>
+                          <Percent className="w-3.5 h-3.5" /> Factoring Facility
+                        </span>
+                        <span className={`text-xs font-mono font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                          Advance $31,200 (Net)
+                        </span>
+                      </div>
+                      <h4 className={`font-bold text-base ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                        Advance Invoice with 2.5% Factoring
+                      </h4>
+                      <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        Instantly draws liquidity on largest enterprise invoice to Day 2 for an $800 discount fee.
+                      </p>
+                    </div>
+
+                    <div className={`mt-5 pt-4 border-t flex items-center justify-between ${isDark ? 'border-emerald-900/50' : 'border-emerald-100'}`}>
+                      <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Flat fee: $800</span>
+                      <button
+                        disabled={appliedActions['factorInvoice']}
+                        onClick={() => {
+                          handleApplyActionExecution(
+                            'factorInvoice',
+                            () => {
+                              setInvoices(prev => prev.map(inv => (inv.id === 'inv-1' || inv.amount >= 30000) ? { ...inv, dueDate: 2, amount: 31200, confidence: 'high' } : inv));
+                            },
+                            'Factoring funds credited to Day 2.'
+                          );
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                          appliedActions['factorInvoice']
+                            ? isDark ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/60' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-yellow-400 hover:bg-yellow-300 text-slate-950 shadow-md shadow-yellow-400/20'
+                        }`}
+                      >
+                        {appliedActions['factorInvoice'] ? <Check className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5 fill-slate-950" />}
+                        {appliedActions['factorInvoice'] ? 'Factoring Active' : 'Apply to Forecast'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {renderWorkflowStepperFooter()}
+              </div>
+            )}
+
+            {activeTab === 'ledger' && (
+              <div className="space-y-6">
+                <div className={`border rounded-2xl p-5 shadow-sm ${
+                  isDark ? 'bg-slate-900/90 border-emerald-900/50' : 'bg-white border-emerald-200/80'
+                }`}>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <div>
+                      <h3 className={`font-bold text-base ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                        Active Cash Ledger & Working Records
+                      </h3>
+                      <p className={`text-xs font-medium ${isDark ? 'text-emerald-400/80' : 'text-emerald-700'}`}>
+                        Manage customer invoices, toggle settlement status, or edit current opening cash.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                      <div className={`text-xs px-3.5 py-2 rounded-xl border flex items-center gap-2 font-mono ${
+                        isDark ? 'bg-slate-950 text-slate-200 border-emerald-900/70' : 'bg-slate-100 text-slate-800 border-emerald-200'
+                      }`}>
+                        <span className={`font-semibold ${isDark ? 'text-emerald-400/80' : 'text-emerald-800'}`}>Opening Cash:</span>
+                        <input
+                          type="number"
+                          value={currentCash}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setCurrentCash(isNaN(val) ? 0 : val);
+                          }}
+                          className={`bg-transparent font-black focus:outline-none w-24 text-right ${
+                            isDark ? 'text-yellow-400' : 'text-amber-700'
+                          }`}
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setIsAddModalOpen('invoice');
+                          setNewRowData({ title: '', amount: '', day: 15, category: 'Sales', confidence: 'high', contactName: '', email: '', essential: true });
+                        }}
+                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Receivable
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsAddModalOpen('expense');
+                          setNewRowData({ title: '', amount: '', day: 15, category: 'Vendor', confidence: 'high', contactName: '', email: '', essential: true });
+                        }}
+                        className="px-3.5 py-2 bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Payable
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Receivables Table */}
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${
+                        isDark ? 'text-emerald-400' : 'text-emerald-800'
+                      }`}>
+                        <ArrowUpRight className="w-4 h-4" />
+                        Receivables Pipeline (Inflows)
+                      </h4>
+                      <span className="text-xs text-slate-400">{invoices.length} line items</span>
+                    </div>
+
+                    <div className={`overflow-x-auto border rounded-xl ${isDark ? 'border-emerald-900/40' : 'border-emerald-200'}`}>
+                      <table className="w-full text-left text-xs">
+                        <thead className={`border-b font-bold ${
+                          isDark ? 'bg-slate-950 text-emerald-400/80 border-emerald-900/40' : 'bg-slate-100 text-emerald-900 border-emerald-200'
+                        }`}>
+                          <tr>
+                            <th className="p-3">Customer / Entity</th>
+                            <th className="p-3">Amount</th>
+                            <th className="p-3">Maturity Date</th>
+                            <th className="p-3">Confidence</th>
+                            <th className="p-3">Status</th>
+                            <th className="p-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className={`divide-y ${isDark ? 'divide-emerald-950/60 bg-slate-900/60' : 'divide-emerald-100 bg-white'}`}>
+                          {invoices.map((inv) => (
+                            <tr key={inv.id} className={isDark ? 'hover:bg-slate-800/40' : 'hover:bg-emerald-50/50'}>
+                              <td className={`p-3 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
+                                {inv.client}
+                                <span className="block text-[10px] font-normal text-slate-400">{inv.email || 'billing@client.com'}</span>
+                              </td>
+                              <td className={`p-3 font-mono font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                                {formatCurrency(inv.amount)}
+                              </td>
+                              <td className={`p-3 font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                                Day {inv.dueDate + (inv.delayDays || 0)}
+                              </td>
+                              <td className="p-3">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-black border ${
+                                  inv.confidence === 'high'
+                                    ? isDark ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : inv.confidence === 'medium'
+                                    ? isDark ? 'bg-yellow-400/20 text-yellow-300 border-yellow-400/40' : 'bg-amber-100 text-amber-800 border-amber-300'
+                                    : 'bg-rose-500/20 text-rose-600 border-rose-400'
+                                }`}>
+                                  {inv.confidence}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <button
+                                  onClick={() => toggleInvoiceStatus(inv.id)}
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
+                                    inv.status === 'paid'
+                                      ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                                      : isDark ? 'bg-slate-950 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-300'
+                                  }`}
+                                >
+                                  {inv.status === 'paid' ? '✓ Received' : 'Pending'}
+                                </button>
+                              </td>
+                              <td className="p-3 text-right">
+                                <button
+                                  onClick={() => deleteInvoice(inv.id)}
+                                  className="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
+                                  title="Delete row"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Payables Table */}
+                  <div className="mt-8">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${
+                        isDark ? 'text-yellow-400' : 'text-amber-800'
+                      }`}>
+                        <ArrowDownRight className="w-4 h-4" />
+                        Scheduled Liabilities (Outflows)
+                      </h4>
+                      <span className="text-xs text-slate-400">{expenses.length} recurring schedules</span>
+                    </div>
+
+                    <div className={`overflow-x-auto border rounded-xl ${isDark ? 'border-emerald-900/40' : 'border-emerald-200'}`}>
+                      <table className="w-full text-left text-xs">
+                        <thead className={`border-b font-bold ${
+                          isDark ? 'bg-slate-950 text-yellow-400/80 border-emerald-900/40' : 'bg-slate-100 text-amber-900 border-emerald-200'
+                        }`}>
+                          <tr>
+                            <th className="p-3">Obligation Title</th>
+                            <th className="p-3">Category</th>
+                            <th className="p-3">Amount</th>
+                            <th className="p-3">Due Cycle Days</th>
+                            <th className="p-3">Priority</th>
+                            <th className="p-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className={`divide-y ${isDark ? 'divide-emerald-950/60 bg-slate-900/60' : 'divide-emerald-100 bg-white'}`}>
+                          {expenses.map((exp) => (
+                            <tr key={exp.id} className={isDark ? 'hover:bg-slate-800/40' : 'hover:bg-emerald-50/50'}>
+                              <td className={`p-3 font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>{exp.title}</td>
+                              <td className={`p-3 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{exp.category}</td>
+                              <td className={`p-3 font-mono font-bold ${isDark ? 'text-yellow-400' : 'text-amber-700'}`}>
+                                {formatCurrency(exp.amount)}
+                              </td>
+                              <td className={`p-3 font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                                {exp.dueDayOfInterval.join(', ')}
+                              </td>
+                              <td className="p-3">
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                  exp.essential
+                                    ? isDark ? 'bg-emerald-950 text-emerald-300 border-emerald-800/60' : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                    : isDark ? 'bg-yellow-400/20 text-yellow-300 border-yellow-400/30' : 'bg-amber-100 text-amber-800 border-amber-300'
+                                }`}>
+                                  {exp.essential ? 'Essential' : 'Discretionary'}
+                                </span>
+                              </td>
+                              <td className="p-3 text-right">
+                                <button
+                                  onClick={() => deleteExpense(exp.id)}
+                                  className="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
+                                  title="Delete row"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {renderWorkflowStepperFooter()}
+              </div>
+            )}
+          </main>
+
+          {/* CSV Upload & Parser Modal */}
+          {isUploadModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+              <div className={`border rounded-2xl w-full max-w-xl p-6 shadow-2xl space-y-4 ${
+                isDark ? 'bg-slate-900 border-emerald-500/40 text-white' : 'bg-white border-emerald-200 text-slate-900'
+              }`}>
+                <div className="flex items-center justify-between pb-3 border-b border-emerald-900/30">
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="w-5 h-5 text-yellow-500" />
+                    <h3 className="font-bold text-base">Import Bank Statement / Ledger CSV</h3>
+                  </div>
+                  <button onClick={() => setIsUploadModalOpen(false)} className="text-slate-400 hover:text-white text-sm">
+                    ✕
+                  </button>
+                </div>
+
+                {!parsedPreview ? (
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOver(false);
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        handleFileUpload(e.dataTransfer.files[0]);
+                      }
+                    }}
+                    className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
+                      dragOver
+                        ? 'border-yellow-400 bg-yellow-400/10'
+                        : isDark ? 'border-emerald-800/60 bg-slate-950/60 hover:border-emerald-500/60' : 'border-emerald-200 bg-slate-50 hover:border-emerald-400'
+                    }`}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,.txt"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          handleFileUpload(e.target.files[0]);
+                        }
+                      }}
+                    />
+                    <UploadCloud className="w-10 h-10 text-emerald-500 mx-auto mb-2 animate-bounce" />
+                    <p className="font-bold text-sm">Drop CSV file here or browse</p>
+                    <p className="text-xs text-slate-400 mt-1">Supports Bank Statement exports, receivables, and payables</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className={`p-4 rounded-xl border text-xs ${isDark ? 'bg-slate-950 border-emerald-900/50' : 'bg-emerald-50 border-emerald-200'}`}>
+                      <p className="font-bold text-sm text-emerald-500 mb-1">CSV Verified & Parsed</p>
+                      <p>Inflow Items Found: <strong>{parsedPreview.invoices.length}</strong></p>
+                      <p>Payable Items Found: <strong>{parsedPreview.expenses.length}</strong></p>
+                      {parsedPreview.detectedCash !== null && (
+                        <p>Opening Balance Detected: <strong>{formatCurrency(parsedPreview.detectedCash)}</strong></p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <button
+                        onClick={() => setParsedPreview(null)}
+                        className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
+                      >
+                        Upload Another
+                      </button>
+                      <button
+                        onClick={commitParsedUpload}
+                        className="px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs font-bold rounded-xl shadow-md"
+                      >
+                        Add to Forecast & Ledger
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-2 flex items-center justify-between border-t border-emerald-900/20 text-xs">
+                  <span className="text-slate-400">Need a template format?</span>
+                  <button
+                    onClick={handleDownloadSampleCSV}
+                    className="text-yellow-500 hover:underline font-semibold flex items-center gap-1"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download Sample CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add Custom Row Modal */}
+          {isAddModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+              <div className={`border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4 ${
+                isDark ? 'bg-slate-900 border-emerald-500/40 text-white' : 'bg-white border-emerald-200 text-slate-900'
+              }`}>
+                <div className="flex items-center justify-between pb-3 border-b border-emerald-900/30">
+                  <h3 className="font-bold text-base flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-yellow-500" />
+                    {isAddModalOpen === 'invoice' ? 'Add New Receivable (Inflow)' : 'Schedule New Liability (Payable)'}
+                  </h3>
+                  <button onClick={() => setIsAddModalOpen(null)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+
+                <form onSubmit={handleSaveCustomRow} className="space-y-3 text-xs">
+                  <div>
+                    <label className="font-semibold block mb-1">
+                      {isAddModalOpen === 'invoice' ? 'Client / Entity Name' : 'Obligation / Vendor Title'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={isAddModalOpen === 'invoice' ? 'e.g. Apex Global Corp' : 'e.g. Server Hosting Tier'}
+                      value={newRowData.title}
+                      onChange={(e) => setNewRowData({ ...newRowData, title: e.target.value })}
+                      className={`w-full p-2.5 rounded-xl border focus:outline-none ${
+                        isDark ? 'bg-slate-950 border-emerald-900 text-white' : 'bg-slate-50 border-emerald-200 text-slate-900'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-semibold block mb-1">Amount ($)</label>
+                      <input
+                        type="number"
+                        required
+                        placeholder="5000"
+                        value={newRowData.amount}
+                        onChange={(e) => setNewRowData({ ...newRowData, amount: e.target.value })}
+                        className={`w-full p-2.5 rounded-xl border focus:outline-none ${
+                          isDark ? 'bg-slate-950 border-emerald-900 text-white' : 'bg-slate-50 border-emerald-200 text-slate-900'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="font-semibold block mb-1">Due Day (1-90)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="90"
+                        required
+                        value={newRowData.day}
+                        onChange={(e) => setNewRowData({ ...newRowData, day: e.target.value })}
+                        className={`w-full p-2.5 rounded-xl border focus:outline-none ${
+                          isDark ? 'bg-slate-950 border-emerald-900 text-white' : 'bg-slate-50 border-emerald-200 text-slate-900'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {isAddModalOpen === 'invoice' ? (
+                    <div>
+                      <label className="font-semibold block mb-1">Confidence Score</label>
+                      <select
+                        value={newRowData.confidence}
+                        onChange={(e) => setNewRowData({ ...newRowData, confidence: e.target.value })}
+                        className={`w-full p-2.5 rounded-xl border focus:outline-none ${
+                          isDark ? 'bg-slate-950 border-emerald-900 text-white' : 'bg-slate-50 border-emerald-200 text-slate-900'
+                        }`}
+                      >
+                        <option value="high">High (Prompt Payer)</option>
+                        <option value="medium">Medium (Standard Terms)</option>
+                        <option value="low">Low (Disputed / Historically Late)</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-semibold block mb-1">Category</label>
+                        <select
+                          value={newRowData.category}
+                          onChange={(e) => setNewRowData({ ...newRowData, category: e.target.value })}
+                          className={`w-full p-2.5 rounded-xl border focus:outline-none ${
+                            isDark ? 'bg-slate-950 border-emerald-900 text-white' : 'bg-slate-50 border-emerald-200 text-slate-900'
+                          }`}
+                        >
+                          <option value="Payroll">Payroll</option>
+                          <option value="Tax">Tax / GST</option>
+                          <option value="Rent">Rent</option>
+                          <option value="Vendor">Vendor</option>
+                          <option value="CapEx">CapEx / Hardware</option>
+                          <option value="Discretionary">Discretionary</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="font-semibold block mb-1">Priority</label>
+                        <select
+                          value={newRowData.essential ? 'true' : 'false'}
+                          onChange={(e) => setNewRowData({ ...newRowData, essential: e.target.value === 'true' })}
+                          className={`w-full p-2.5 rounded-xl border focus:outline-none ${
+                            isDark ? 'bg-slate-950 border-emerald-900 text-white' : 'bg-slate-50 border-emerald-200 text-slate-900'
+                          }`}
+                        >
+                          <option value="true">Essential (Non-negotiable)</option>
+                          <option value="false">Discretionary (Can Delay)</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-3 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddModalOpen(null)}
+                      className="px-4 py-2 text-slate-400 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold rounded-xl shadow-md"
+                    >
+                      Save Entry
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* AI Script & Negotiation Template Modal */}
+          {activeActionModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+              <div className={`border rounded-2xl w-full max-w-xl p-6 shadow-2xl space-y-4 ${
+                isDark ? 'bg-slate-900 border-emerald-500/30' : 'bg-white border-emerald-200'
+              }`}>
+                <div className={`flex items-center justify-between pb-3 border-b ${
+                  isDark ? 'border-emerald-900/50' : 'border-emerald-100'
+                }`}>
+                  <div className="flex items-center gap-2.5">
+                    <div className={`p-2 rounded-xl border ${
+                      isDark ? 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30' : 'bg-amber-100 text-amber-800 border-amber-300'
+                    }`}>
+                      <Sparkles className="w-5 h-5 text-yellow-500" />
+                    </div>
+                    <div>
+                      <h3 className={`font-bold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        {activeActionModal.type === 'chase' ? 'AI Collection Reminder Draft' : 'Vendor Payment Deferral Proposal'}
+                      </h3>
+                      <p className={`text-xs font-medium ${isDark ? 'text-emerald-400/70' : 'text-emerald-700'}`}>
+                        Crafted to accelerate liquidity while preserving relationship
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveActionModal(null)}
+                    className={`p-1 text-sm font-bold ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className={`p-4 rounded-xl border text-xs sm:text-sm font-sans leading-relaxed whitespace-pre-line select-text ${
+                  isDark ? 'bg-slate-950 border-emerald-900/40 text-slate-200' : 'bg-slate-50 border-emerald-200 text-slate-800'
+                }`}>
+                  {activeActionModal.type === 'chase' ? (
+`Subject: Follow-up on Invoice #${activeActionModal.data?.id || 'INV-2026'} - ${formatCurrency(activeActionModal.data?.amount)}
+
+Hi ${activeActionModal.data?.contactName || 'Finance Team'},
+
+Hope you're having a productive week!
+
+Our accounting records indicate Invoice #${activeActionModal.data?.id || 'INV-2026'} for ${formatCurrency(activeActionModal.data?.amount)} is scheduled for release in the upcoming pay-run.
+
+As we conclude our month-end liquidity alignment, could you kindly confirm whether this invoice has been queued for execution?
+
+If you require another copy of the invoice or our direct ACH/wire routing details, please let me know.
+
+Warm regards,
+Finance & Accounts Department`
+                  ) : (
+`Subject: Proposed 2-Tranche Schedule for ${activeActionModal.data?.title || 'Upcoming Service Billing'}
+
+Hi Accounts Team,
+
+We value our strong vendor collaboration and wanted to reach out proactively regarding our upcoming commitment of ${formatCurrency(activeActionModal.data?.amount)}.
+
+To optimize working capital during our scheduled quarterly tax and payroll dates, we propose scheduling this via two installments:
+- Tranche 1: 50% (${formatCurrency(Math.round((activeActionModal.data?.amount || 0) / 2))}) on Day 20
+- Tranche 2: 50% (${formatCurrency(Math.round((activeActionModal.data?.amount || 0) / 2))}) on Day 45
+
+Please confirm if this installment schedule is approved on your end.
+
+Best regards,
+Treasury Operations`
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    onClick={() => {
+                      const text = activeActionModal.type === 'chase'
+                        ? `Hi ${activeActionModal.data?.contactName || 'Team'}, quick reminder regarding Invoice #${activeActionModal.data?.id || ''} for ${formatCurrency(activeActionModal.data?.amount)}. Could you confirm payment release date? Thank you!`
+                        : `Hi Team, proposing a 50/50 2-part split for ${activeActionModal.data?.title || 'upcoming commitment'}. Thank you!`;
+                      
+                      if (navigator.clipboard) {
+                        navigator.clipboard.writeText(text);
+                      } else {
+                        const ta = document.createElement('textarea');
+                        ta.value = text;
+                        document.body.appendChild(ta);
+                        ta.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(ta);
+                      }
+                      setCopiedText(true);
+                      setTimeout(() => setCopiedText(false), 2000);
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
+                      isDark
+                        ? 'bg-slate-950 hover:bg-slate-800 text-yellow-400 border-yellow-400/30'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                    }`}
+                  >
+                    {copiedText ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedText ? 'Copied!' : 'Copy to Clipboard'}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (activeActionModal.type === 'chase') {
+                        handleApplyActionExecution(
+                          'accelerateAcme',
+                          () => setInvoices(prev => prev.map(inv => inv.id === activeActionModal.data?.id ? { ...inv, dueDate: Math.max(2, inv.dueDate - 5), confidence: 'high' } : inv)),
+                          'Invoice collection date advanced by 5 days.'
+                        );
+                      } else {
+                        handleApplyActionExecution(
+                          'splitVendor',
+                          () => setExpenses(prev => prev.map(exp => exp.id === activeActionModal.data?.id ? { ...exp, amount: Math.round(exp.amount / 2), dueDayOfInterval: [20, 45] } : exp)),
+                          'Vendor commitment split into two tranches.'
+                        );
+                      }
+                      setActiveActionModal(null);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                    Apply & Recalculate Curve
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<CashFlowCopilot />);
+  </script>
+</body>
+</html>
